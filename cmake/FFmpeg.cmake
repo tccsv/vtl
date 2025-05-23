@@ -1,7 +1,7 @@
 include(FetchContent)
 include(ExternalProject)
 
-set(FFMPEG_BUILD_SHARED_LIBS OFF CACHE BOOL "Build FFmpeg as shared libraries")
+set(FFMPEG_BUILD_SHARED_LIBS ON CACHE BOOL "Build FFmpeg as shared libraries")
 set(FFMPEG_ENABLE_GPL ON CACHE BOOL "Enable GPL code")
 set(FFMPEG_ENABLE_NONFREE ON CACHE BOOL "Enable nonfree code")
 
@@ -117,4 +117,33 @@ set(FFMPEG_LIBRARIES
 add_library(ffmpeg INTERFACE)
 target_include_directories(ffmpeg INTERFACE ${FFMPEG_INCLUDE_DIRS})
 target_link_libraries(ffmpeg INTERFACE ${FFMPEG_LIBRARIES})
-add_dependencies(ffmpeg ffmpeg_ext) 
+
+# Кроссплатформенная линковка для ffmpeg INTERFACE
+if(APPLE)
+    target_link_libraries(ffmpeg INTERFACE
+        "-framework Metal"
+        "-framework VideoToolbox"
+        "-framework CoreImage"
+        "-framework AppKit"
+        "-framework CoreFoundation"
+        "-framework CoreMedia"
+        "-framework CoreVideo"
+        "-framework CoreServices"
+        "-framework Security"
+        "-framework AudioToolbox"
+        z
+        iconv
+    )
+elseif(UNIX)
+    target_link_libraries(ffmpeg INTERFACE
+        z
+        bz2
+        lzma
+        zstd
+        m
+        pthread
+        iconv
+    )
+endif()
+
+add_dependencies(ffmpeg ffmpeg_ext)
