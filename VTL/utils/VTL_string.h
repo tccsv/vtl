@@ -7,13 +7,13 @@ extern "C"
 #endif
 
 
-#define VTL_STANDART_STRING_MAX_LENGTH 1024
+#define VTL_publication_string_max_length 1024
 
-typedef char VTL_StandartChar;
+typedef char VTL_publication_char;
 
-#define VTL_STANDART_STRING_SIZE (VTL_STANDART_STRING_MAX_LENGTH*sizeof(VTL_StandartChar))
+#define VTL_publication_string_size (VTL_publication_string_max_length*sizeof(VTL_publication_char))
 
-typedef VTL_StandartChar VTL_StandartString[VTL_STANDART_STRING_MAX_LENGTH];
+typedef VTL_publication_char VTL_publication_string[VTL_publication_string_max_length];
 
 
 #ifdef __cplusplus

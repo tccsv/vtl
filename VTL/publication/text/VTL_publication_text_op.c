@@ -1,5 +1,28 @@
 #include <VTL/publication/text/VTL_publication_text_op.h>
+#include <VTL/publication/text/VTL_publication_text_data.h>
+#include <stdlib.h>
 
+VTL_publication_app_result VTL_publication_text_op_Init(VTL_publication_text* p_text) {
+    if (!p_text) {
+        return VTL_publication_res_kError;
+    }
+
+    p_text->text = (VTL_publication_text_symbol*)malloc(VTL_publication_text_default_size);
+    if (!p_text->text) {
+        return VTL_publication_res_kError;
+    }
+
+    p_text->length = 0;
+    return VTL_publication_res_kOk;
+}
+
+void VTL_publication_text_op_Free(VTL_publication_text* p_text) {
+    if (p_text && p_text->text) {
+        free(p_text->text);
+        p_text->text = NULL;
+        p_text->length = 0;
+    }
+}
 
 static VTL_AppResult VTL_publication_text_InitFromStandartMD(VTL_publication_MarkedText** pp_publication, 
                                                        const VTL_publication_Text* p_src_text)
@@ -79,3 +102,4 @@ VTL_AppResult VTL_publication_marked_text_TransformToBB(VTL_publication_Text** p
 {
     return VTL_res_kOk;
 }
+

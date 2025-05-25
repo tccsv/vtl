@@ -9,9 +9,10 @@ extern "C"
 #include <VTL/publication/text/VTL_publication_text_data.h>
 #include <VTL/utils/VTL_file.h>
 #include <VTL/VTL_app_result.h>
+#include <VTL/VTL_publication_markup_text_flags.h>
 
-VTL_AppResult VTL_pusblication_text_Read(VTL_publication_Text** pp_text, const VTL_Filename file_name);
-
+VTL_publication_app_result VTL_publication_text_read_Init(VTL_publication_text* p_text);
+void VTL_publication_text_read_Free(VTL_publication_text* p_text);
 
 #ifdef __cplusplus
 }

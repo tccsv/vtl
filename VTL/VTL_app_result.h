@@ -8,19 +8,19 @@ extern "C"
 
 
 
-typedef enum _VTL_AppResult 
+typedef enum _VTL_publication_app_result 
 {
-    VTL_res_kOk = 0,
+    VTL_publication_res_kOk = 0,
     
     
-    VTL_res_video_fs_r_kMissingFileErr = 1,
-    VTL_res_video_fs_r_kFileIsBusyErr,
+    VTL_publication_res_kMissingFileErr = 1,
+    VTL_publication_res_kFileIsBusyErr,
 
-    VTL_res_video_fs_w_kFileIsBusyErr = 10,
+    VTL_publication_res_kFileIsBusyErr = 10,
 
 
     
-} VTL_AppResult;
+} VTL_publication_app_result;
 
 
 
