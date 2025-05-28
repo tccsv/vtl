@@ -11,12 +11,11 @@ extern "C"
 #include <VTL/VTL_app_result.h>
 #include <VTL/VTL_publication_markup_text_flags.h>
 
-VTL_publication_app_result VTL_publication_text_read_Init(VTL_publication_text* p_text);
-void VTL_publication_text_read_Free(VTL_publication_text* p_text);
+VTL_publication_app_result VTL_publication_TextReadInit(VTL_publication_text* p_text);
+void VTL_publication_TextReadFree(VTL_publication_text* p_text);
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

@@ -1,10 +1,10 @@
-#include "VTL_file_ops.h"
+#include <VTL/VTL_file_ops.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-VTL_publication_file_result VTL_publication_file_read_s(const char* filename, char** content, size_t* size) {
-    if (!filename || !content || !size) {
+VTL_publication_file_result VTL_publication_FileReadS(const char* filename, char** content, size_t* size) {
+    if (!content || !size) {
         return VTL_publication_file_res_kErrorMemory;
     }
 
@@ -13,21 +13,17 @@ VTL_publication_file_result VTL_publication_file_read_s(const char* filename, ch
         return VTL_publication_file_res_kErrorOpen;
     }
 
-    // Get file size
     fseek(file, 0, SEEK_END);
     *size = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    // Allocate memory
     *content = (char*)malloc(*size + 1);
     if (!*content) {
         fclose(file);
         return VTL_publication_file_res_kErrorMemory;
     }
 
-    // Read file
-    size_t read_size = fread(*content, 1, *size, file);
-    if (read_size != *size) {
+    if (fread(*content, 1, *size, file) != *size) {
         free(*content);
         fclose(file);
         return VTL_publication_file_res_kErrorRead;
@@ -38,8 +34,8 @@ VTL_publication_file_result VTL_publication_file_read_s(const char* filename, ch
     return VTL_publication_file_res_kOk;
 }
 
-VTL_publication_file_result VTL_publication_file_write_s(const char* filename, const char* content, size_t size) {
-    if (!filename || !content) {
+VTL_publication_file_result VTL_publication_FileWriteS(const char* filename, const char* content, size_t size) {
+    if (!content) {
         return VTL_publication_file_res_kErrorMemory;
     }
 
@@ -48,18 +44,17 @@ VTL_publication_file_result VTL_publication_file_write_s(const char* filename, c
         return VTL_publication_file_res_kErrorOpen;
     }
 
-    size_t written = fwrite(content, 1, size, file);
-    fclose(file);
-
-    if (written != size) {
+    if (fwrite(content, 1, size, file) != size) {
+        fclose(file);
         return VTL_publication_file_res_kErrorWrite;
     }
 
+    fclose(file);
     return VTL_publication_file_res_kOk;
 }
 
-VTL_publication_file_result VTL_publication_file_append_s(const char* filename, const char* content, size_t size) {
-    if (!filename || !content) {
+VTL_publication_file_result VTL_publication_FileAppendS(const char* filename, const char* content, size_t size) {
+    if (!content) {
         return VTL_publication_file_res_kErrorMemory;
     }
 
@@ -68,20 +63,19 @@ VTL_publication_file_result VTL_publication_file_append_s(const char* filename, 
         return VTL_publication_file_res_kErrorOpen;
     }
 
-    size_t written = fwrite(content, 1, size, file);
-    fclose(file);
-
-    if (written != size) {
+    if (fwrite(content, 1, size, file) != size) {
+        fclose(file);
         return VTL_publication_file_res_kErrorWrite;
     }
 
+    fclose(file);
     return VTL_publication_file_res_kOk;
 }
 
-const char* VTL_publication_file_get_error_message(VTL_publication_file_result result) {
+const char* VTL_publication_FileGetErrorMessage(VTL_publication_file_result result) {
     switch (result) {
         case VTL_publication_file_res_kOk:
-            return "Operation completed successfully";
+            return "No error";
         case VTL_publication_file_res_kErrorOpen:
             return "Failed to open file";
         case VTL_publication_file_res_kErrorRead:
