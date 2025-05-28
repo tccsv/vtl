@@ -1,7 +1,7 @@
 {
    "fontname": "Arial",
    "fontsize": 14,
-   "primary_color": "0xFFFF0000",
+   "primary_color": "0xFF0000FF",
    "back_color": "0x80000000",
    "outline_color": "0xFF000000",
    "outline": 2,

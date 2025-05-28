@@ -11,17 +11,21 @@ static const char* VTL_sub_GetFileExt(const char* filename) {
 }
 
 // Определяет формат субтитров по расширению файла
-VTL_sub_Format VTL_sub_ParseDetectFormat(const char* filename) {
-    const char* ext = VTL_sub_GetFileExt(filename);
-    if (strcasecmp(ext, "srt") == 0) return VTL_sub_format_kSRT;
-    if (strcasecmp(ext, "ass") == 0) return VTL_sub_format_kASS;
-    if (strcasecmp(ext, "vtt") == 0) return VTL_sub_format_kVTT;
-    return VTL_sub_format_kUNKNOWN;
+VTL_AppResult VTL_sub_ParseDetectFormat(const char* filename, VTL_sub_Format* out_format) {
+    if (!filename || !out_format) return VTL_res_kNullArgument;
+    const char* dot = strrchr(filename, '.');
+    const char* ext = dot ? dot + 1 : "";
+    if (strcasecmp(ext, "srt") == 0) *out_format = VTL_sub_format_kSRT;
+    else if (strcasecmp(ext, "ass") == 0) *out_format = VTL_sub_format_kASS;
+    else if (strcasecmp(ext, "vtt") == 0) *out_format = VTL_sub_format_kVTT;
+    else *out_format = VTL_sub_format_kUNKNOWN;
+    return VTL_res_kOk;
 }
 
 // Очистка памяти списка субтитров
-void VTL_sub_ListFree(VTL_sub_List* list) {
-    if (!list || !list->entries) return;
+VTL_AppResult VTL_sub_ListFree(VTL_sub_List* list) {
+    if (!list) return VTL_res_kNullArgument;
+    if (!list->entries) return VTL_res_kOk;
     for (size_t i = 0; i < list->count; ++i) {
         free(list->entries[i].text);
         free(list->entries[i].style);
@@ -29,22 +33,35 @@ void VTL_sub_ListFree(VTL_sub_List* list) {
     free(list->entries);
     list->entries = NULL;
     list->count = 0;
+    return VTL_res_kOk;
 }
 
 // Парсер времени
-static double VTL_sub_ParseTime(const char* str, VTL_sub_Format format) {
+static VTL_AppResult VTL_sub_ParseTime(const char* str, VTL_sub_Format format, double* out_time) {
     int h = 0, m = 0, s = 0, frac = 0;
+    if (!str || !out_time) return VTL_res_kNullArgument;
+    *out_time = 0.0;
+    int parsed = 0;
     if (format == VTL_sub_format_kSRT) {
-        if (sscanf(str, "%d:%d:%d,%d", &h, &m, &s, &frac) == 4)
-            return h * 3600.0 + m * 60.0 + s + frac / 1000.0;
+        parsed = sscanf(str, "%d:%d:%d,%d", &h, &m, &s, &frac);
+        if (parsed == 4) {
+            *out_time = h * 3600.0 + m * 60.0 + s + frac / 1000.0;
+            return VTL_res_kOk;
+        }
     } else if (format == VTL_sub_format_kVTT) {
-        if (sscanf(str, "%d:%d:%d.%d", &h, &m, &s, &frac) == 4) // VTT использует точку для миллисекунд
-            return h * 3600.0 + m * 60.0 + s + frac / 1000.0;
+        parsed = sscanf(str, "%d:%d:%d.%d", &h, &m, &s, &frac);
+        if (parsed == 4) {
+            *out_time = h * 3600.0 + m * 60.0 + s + frac / 1000.0;
+            return VTL_res_kOk;
+        }
     } else if (format == VTL_sub_format_kASS) {
-        if (sscanf(str, "%d:%d:%d.%d", &h, &m, &s, &frac) == 4) // ASS использует точку для сантисекунд (сотых долей)
-            return h * 3600.0 + m * 60.0 + s + frac / 100.0; // Делим на 100
+        parsed = sscanf(str, "%d:%d:%d.%d", &h, &m, &s, &frac);
+        if (parsed == 4) {
+            *out_time = h * 3600.0 + m * 60.0 + s + frac / 100.0;
+            return VTL_res_kOk;
+        }
     }
-    return 0.0;
+    return VTL_res_kSubtitleTimeParseError;
 }
 
 // Вспомогательная функция для изменения размера массива субтитров
@@ -75,22 +92,25 @@ static void VTL_sub_ReadSubtitleTextBlock(FILE* f, char* textbuf, size_t buf_siz
     char* p = textbuf;
     *p = '\0'; // Инициализация textbuf пустой строкой
 
-    while (fgets(line_reader, sizeof(line_reader), f)) {
+    int done = 0;
+    while (!done && fgets(line_reader, sizeof(line_reader), f)) {
         if (line_reader[0] == '\n' || line_reader[0] == '\r') { // Пустая строка означает конец блока
-            break;
-        }
-        size_t line_len = strlen(line_reader);
-        // Проверка на переполнение textbuf, оставляем место для null-терминатора
-        if ((p + line_len) >= (textbuf + buf_size - 1)) {
-            size_t remaining_space = (textbuf + buf_size - 1) - p;
-            if (remaining_space > 0) {
-                memcpy(p, line_reader, remaining_space);
-                p += remaining_space;
+            done = 1;
+        } else {
+            size_t line_len = strlen(line_reader);
+            // Проверка на переполнение textbuf, оставляем место для null-терминатора
+            if ((p + line_len) >= (textbuf + buf_size - 1)) {
+                size_t remaining_space = (textbuf + buf_size - 1) - p;
+                if (remaining_space > 0) {
+                    memcpy(p, line_reader, remaining_space);
+                    p += remaining_space;
+                }
+                done = 1; // Буфер заполнен
+            } else {
+                memcpy(p, line_reader, line_len);
+                p += line_len;
             }
-            break; // Буфер заполнен
         }
-        memcpy(p, line_reader, line_len);
-        p += line_len;
     }
     // Удаляем возможные последние переносы строки из собранного textbuf
     while (p > textbuf && (*(p - 1) == '\n' || *(p - 1) == '\r')) {
@@ -111,165 +131,281 @@ VTL_AppResult VTL_sub_ParseFile(const char* input_file, VTL_sub_Format input_for
     VTL_sub_Entry* arr = NULL;
     size_t arr_cap = 0;
     size_t arr_len = 0;
-    char line_buffer[1024]; // Общий буфер для чтения строк
-    char text_buffer[2048]; // Общий буфер для текста субтитра
+    char line_buffer[1024];
+    char text_buffer[2048];
 
     VTL_AppResult res = VTL_res_kOk;
 
     if (input_format == VTL_sub_format_kSRT) {
         while (fgets(line_buffer, sizeof(line_buffer), f)) {
-            // Пропускаем пустые строки между блоками субтитров
-            if (line_buffer[0] == '\n' || line_buffer[0] == '\r') continue;
-            
+            int skip = 0;
+            if (line_buffer[0] == '\n' || line_buffer[0] == '\r') skip = 1;
             int idx = atoi(line_buffer);
-            if (idx == 0 && arr_len > 0) { 
-                 // Невалидный индекс после уже прочитанных субтитров или конец файла с мусором
-                 continue; 
+            if (!skip && idx == 0 && arr_len > 0) skip = 1;
+            if (!skip) {
+                if (!fgets(line_buffer, sizeof(line_buffer), f)) {
+                    fclose(f);
+                    if (arr != NULL) {
+                        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                        VTL_sub_ListFree(&tempList);
+                    }
+                    out_list->entries = NULL;
+                    out_list->count = 0;
+                    return VTL_res_kParseError;
+                }
+                char* arrow = strstr(line_buffer, "-->");
+                if (!arrow) {
+                    fclose(f);
+                    if (arr != NULL) {
+                        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                        VTL_sub_ListFree(&tempList);
+                    }
+                    out_list->entries = NULL;
+                    out_list->count = 0;
+                    return VTL_res_kSubtitleFormatError;
+                }
+                *arrow = '\0';
+                double start, end;
+                res = VTL_sub_ParseTime(line_buffer, input_format, &start);
+                if (res != VTL_res_kOk) {
+                    fclose(f);
+                    if (arr != NULL) {
+                        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                        VTL_sub_ListFree(&tempList);
+                    }
+                    out_list->entries = NULL;
+                    out_list->count = 0;
+                    return res;
+                }
+                res = VTL_sub_ParseTime(arrow + 3, input_format, &end);
+                if (res != VTL_res_kOk) {
+                    fclose(f);
+                    if (arr != NULL) {
+                        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                        VTL_sub_ListFree(&tempList);
+                    }
+                    out_list->entries = NULL;
+                    out_list->count = 0;
+                    return res;
+                }
+                VTL_sub_ReadSubtitleTextBlock(f, text_buffer, sizeof(text_buffer));
+                res = VTL_sub_ResizeSubEntryArray(&arr, &arr_cap, arr_len);
+                if (res != VTL_res_kOk) {
+                    fclose(f);
+                    if (arr != NULL) {
+                        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                        VTL_sub_ListFree(&tempList);
+                    }
+                    out_list->entries = NULL;
+                    out_list->count = 0;
+                    return res;
+                }
+                arr[arr_len].index = idx;
+                arr[arr_len].start = start;
+                arr[arr_len].end = end;
+                arr[arr_len].text = strdup(text_buffer);
+                if (!arr[arr_len].text) {
+                    fclose(f);
+                    if (arr != NULL) {
+                        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                        VTL_sub_ListFree(&tempList);
+                    }
+                    out_list->entries = NULL;
+                    out_list->count = 0;
+                    return VTL_res_kAllocError;
+                }
+                arr[arr_len].style = NULL;
+                arr_len++;
             }
-
-            if (!fgets(line_buffer, sizeof(line_buffer), f)) { res = VTL_res_kParseError; break; } // Строка времени
-            char* arrow = strstr(line_buffer, "-->");
-            if (!arrow) { res = VTL_res_kParseError; break; } // Некорректный формат времени
-            *arrow = '\0';
-            double start = VTL_sub_ParseTime(line_buffer, input_format);
-            double end = VTL_sub_ParseTime(arrow + 3, input_format);
-
-            VTL_sub_ReadSubtitleTextBlock(f, text_buffer, sizeof(text_buffer));
-            
-            res = VTL_sub_ResizeSubEntryArray(&arr, &arr_cap, arr_len);
-            if (res != VTL_res_kOk) break;
-
-            arr[arr_len].index = idx;
-            arr[arr_len].start = start;
-            arr[arr_len].end = end;
-            arr[arr_len].text = strdup(text_buffer);
-            if (!arr[arr_len].text) { res = VTL_res_kMemoryError; break; }
-            arr[arr_len].style = NULL;
-            arr_len++;
         }
     } else if (input_format == VTL_sub_format_kVTT) {
-        // Пропускаем заголовок WEBVTT и возможные пустые строки/комментарии до него
-        while (fgets(line_buffer, sizeof(line_buffer), f)) {
-            if (strstr(line_buffer, "WEBVTT")) break;
+        int found_webvtt = 0;
+        while (fgets(line_buffer, sizeof(line_buffer), f) && !found_webvtt) {
+            if (strstr(line_buffer, "WEBVTT")) found_webvtt = 1;
         }
-
         int current_vtt_index = 1;
-        while (fgets(line_buffer, sizeof(line_buffer), f)) { // Читаем идентификатор или таймкод
-            // Пропускаем комментарии NOTE и пустые строки
-            if (strncmp(line_buffer, "NOTE", 4) == 0 || line_buffer[0] == '\n' || line_buffer[0] == '\r') continue;
-
-            char* arrow = strstr(line_buffer, "-->");
-            if (!arrow) { // Если не таймкод, значит это идентификатор, читаем следующую строку для таймкода
-                if (!fgets(line_buffer, sizeof(line_buffer), f)) { res = VTL_res_kParseError; break; }
-                arrow = strstr(line_buffer, "-->");
-                if (!arrow) { continue; } // Пропускаем блок, если опять не таймкод
-            }
-            *arrow = '\0';
-            double start = VTL_sub_ParseTime(line_buffer, input_format);
-            double end = VTL_sub_ParseTime(arrow + 3, input_format);
-
-            VTL_sub_ReadSubtitleTextBlock(f, text_buffer, sizeof(text_buffer));
-
-            res = VTL_sub_ResizeSubEntryArray(&arr, &arr_cap, arr_len);
-            if (res != VTL_res_kOk) break;
-            
-            arr[arr_len].index = current_vtt_index++;
-            arr[arr_len].start = start;
-            arr[arr_len].end = end;
-            arr[arr_len].text = strdup(text_buffer);
-            if (!arr[arr_len].text) { res = VTL_res_kMemoryError; break; }
-            arr[arr_len].style = NULL; 
-            arr_len++;
-        }
-    } else if (input_format == VTL_sub_format_kASS) {
-        // Пропускаем до секции [Events]
         while (fgets(line_buffer, sizeof(line_buffer), f)) {
-            if (strstr(line_buffer, "[Events]")) break;
-        }
-        // Пропускаем строку "Format: ..."
-        if (!fgets(line_buffer, sizeof(line_buffer), f)) {
-             // Если после [Events] сразу конец файла или нет Format строки
-        }
-
-        int current_ass_index = 1;
-        while (fgets(line_buffer, sizeof(line_buffer), f)) {
-            if (strncmp(line_buffer, "Dialogue:", 9) != 0) continue;
-            
-            char* p_line = line_buffer + 9; // Пропускаем "Dialogue: "
-            char* fields[10] = {0}; // Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
-            int field_count = 0;
-            char* token = p_line;
-            
-            // Разбор полей ASS с учетом того, что последнее поле (Text) идет до конца строки
-            // и может содержать запятые.
-            for (int i = 0; i < 9 && token; ++i) { // Первые 9 полей разделены запятыми
-                fields[field_count++] = token;
-                char* comma = strchr(token, ',');
-                if (comma) {
-                    *comma = '\0';
-                    token = comma + 1;
-                } else {
-                    token = NULL; // Больше нет запятых, это может быть ошибка или конец строки раньше времени
+            int skip = 0;
+            if (strncmp(line_buffer, "NOTE", 4) == 0 || line_buffer[0] == '\n' || line_buffer[0] == '\r') skip = 1;
+            if (!skip) {
+                char* arrow = strstr(line_buffer, "-->");
+                if (!arrow) {
+                    if (!fgets(line_buffer, sizeof(line_buffer), f)) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return VTL_res_kParseError;
+                    }
+                    arrow = strstr(line_buffer, "-->");
+                    if (!arrow) skip = 1;
+                }
+                if (!skip && arrow) {
+                    *arrow = '\0';
+                    double start, end;
+                    res = VTL_sub_ParseTime(line_buffer, input_format, &start);
+                    if (res != VTL_res_kOk) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return res;
+                    }
+                    res = VTL_sub_ParseTime(arrow + 3, input_format, &end);
+                    if (res != VTL_res_kOk) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return res;
+                    }
+                    VTL_sub_ReadSubtitleTextBlock(f, text_buffer, sizeof(text_buffer));
+                    res = VTL_sub_ResizeSubEntryArray(&arr, &arr_cap, arr_len);
+                    if (res != VTL_res_kOk) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return res;
+                    }
+                    arr[arr_len].index = current_vtt_index++;
+                    arr[arr_len].start = start;
+                    arr[arr_len].end = end;
+                    arr[arr_len].text = strdup(text_buffer);
+                    if (!arr[arr_len].text) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return VTL_res_kAllocError;
+                    }
+                    arr[arr_len].style = NULL;
+                    arr_len++;
                 }
             }
-            if (token) { // Все что осталось - это текстовое поле
-                 fields[field_count++] = token;
-                 // Удаляем перенос строки с конца, если есть
-                 char* nl = strchr(token, '\n'); if (nl) *nl = '\0';
-                 nl = strchr(token, '\r'); if (nl) *nl = '\0';
+        }
+    } else if (input_format == VTL_sub_format_kASS) {
+        int found_events = 0;
+        while (fgets(line_buffer, sizeof(line_buffer), f) && !found_events) {
+            if (strstr(line_buffer, "[Events]")) found_events = 1;
+        }
+        if (!fgets(line_buffer, sizeof(line_buffer), f)) {
+            fclose(f);
+            if (arr != NULL) {
+                VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                VTL_sub_ListFree(&tempList);
             }
-
-            if (field_count < 10) continue; // Ожидаем как минимум 10 полей (0-9)
-
-            if (!fields[1] || !fields[2] || !fields[3] || !fields[9]) continue;
-
-            double start = VTL_sub_ParseTime(fields[1], input_format);
-            double end = VTL_sub_ParseTime(fields[2], input_format);
-            
-            res = VTL_sub_ResizeSubEntryArray(&arr, &arr_cap, arr_len);
-            if (res != VTL_res_kOk) break;
-
-            arr[arr_len].index = current_ass_index++;
-            arr[arr_len].start = start;
-            arr[arr_len].end = end;
-            arr[arr_len].text = strdup(fields[9]);
-            arr[arr_len].style = strdup(fields[3]);
-
-            if (!arr[arr_len].text || !arr[arr_len].style) {
-                free(arr[arr_len].text); // Освобождаем то, что могло выделиться
-                free(arr[arr_len].style);
-                arr[arr_len].text = NULL; 
-                arr[arr_len].style = NULL;
-                res = VTL_res_kMemoryError; 
-                break;
+            out_list->entries = NULL;
+            out_list->count = 0;
+            return VTL_res_kSubtitleFormatError;
+        }
+        int current_ass_index = 1;
+        while (fgets(line_buffer, sizeof(line_buffer), f)) {
+            int skip = 0;
+            if (strncmp(line_buffer, "Dialogue:", 9) != 0) skip = 1;
+            if (!skip) {
+                char* p_line = line_buffer + 9;
+                char* fields[10] = {0};
+                int field_count = 0;
+                char* token = p_line;
+                for (int i = 0; i < 9 && token; ++i) {
+                    fields[field_count++] = token;
+                    char* comma = strchr(token, ',');
+                    if (comma) {
+                        *comma = '\0';
+                        token = comma + 1;
+                    } else {
+                        token = NULL;
+                    }
+                }
+                if (token) {
+                    fields[field_count++] = token;
+                    char* nl = strchr(token, '\n'); if (nl) *nl = '\0';
+                    nl = strchr(token, '\r'); if (nl) *nl = '\0';
+                }
+                if (field_count < 10) skip = 1;
+                if (!skip && (!fields[1] || !fields[2] || !fields[3] || !fields[9])) skip = 1;
+                if (!skip) {
+                    double start, end;
+                    res = VTL_sub_ParseTime(fields[1], input_format, &start);
+                    if (res != VTL_res_kOk) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return res;
+                    }
+                    res = VTL_sub_ParseTime(fields[2], input_format, &end);
+                    if (res != VTL_res_kOk) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return res;
+                    }
+                    res = VTL_sub_ResizeSubEntryArray(&arr, &arr_cap, arr_len);
+                    if (res != VTL_res_kOk) {
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return res;
+                    }
+                    arr[arr_len].index = current_ass_index++;
+                    arr[arr_len].start = start;
+                    arr[arr_len].end = end;
+                    arr[arr_len].text = strdup(fields[9]);
+                    arr[arr_len].style = strdup(fields[3]);
+                    if (!arr[arr_len].text || !arr[arr_len].style) {
+                        free(arr[arr_len].text);
+                        free(arr[arr_len].style);
+                        arr[arr_len].text = NULL;
+                        arr[arr_len].style = NULL;
+                        fclose(f);
+                        if (arr != NULL) {
+                            VTL_sub_List tempList = { .entries = arr, .count = arr_len };
+                            VTL_sub_ListFree(&tempList);
+                        }
+                        out_list->entries = NULL;
+                        out_list->count = 0;
+                        return VTL_res_kAllocError;
+                    }
+                    arr_len++;
+                }
             }
-            arr_len++;
         }
     } else {
-        res = VTL_res_kUnsupportedFormat;
+        fclose(f);
+        out_list->entries = NULL;
+        out_list->count = 0;
+        return VTL_res_kUnsupportedFormat;
     }
-
     fclose(f);
-
-    if (res != VTL_res_kOk && arr != NULL) {
-        // Если произошла ошибка в цикле парсинга (кроме ошибки выделения памяти, обработанной выше),
-        // и массив arr был выделен, нужно его очистить.
-        VTL_sub_List tempList = { .entries = arr, .count = arr_len };
-        VTL_sub_ListFree(&tempList); // Это обнулит arr_len и arr внутри tempList
-        arr = NULL; // Убедимся, что out_list не получит некорректный указатель
-        arr_len = 0;
-    }
-    
     out_list->entries = arr;
     out_list->count = arr_len;
-    
-    // Если res был VTL_res_kOk, но arr_len == 0 (например, пустой файл субтитров), это все равно Ok.
-    // Если res был ошибкой, он просто вернется.
-    return res;
+    return VTL_res_kOk;
 }
-
-// Функция для парсинга субтитров из буфера (VTL_BufferData)
-VTL_AppResult VTL_sub_ParseBuffer(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list) {
-    // Реализация аналогична тому, что было, но работает с p_buffer_data->data вместо чтения из файла
-    // ... (реализация парсинга из буфера, а не из файла) ...
-} 

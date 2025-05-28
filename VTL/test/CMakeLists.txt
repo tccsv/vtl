@@ -15,10 +15,10 @@ add_executable(VTL_sub_style_demo
     ../media_container/sub/VTL_sub_style.c
     ../media_container/sub/VTL_sub_parse.c
     ../media_container/sub/VTL_sub_burn.c
-    ../media_container/sub/VTL_sub_read.c
-    ../media_container/sub/VTL_sub_write.c
+    ../media_container/sub/infra/VTL_sub_read.c
+    ../media_container/sub/infra/VTL_sub_write.c
     ../media_container/sub/VTL_sub_data.c
-    ../media_container/sub/VTL_sub_opencl.c
+    ../media_container/sub/opencl/VTL_sub_opencl_strip_tags.c
     ../../external/parson/parson.c
 )
 target_include_directories(VTL_sub_style_demo PRIVATE

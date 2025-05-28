@@ -18,7 +18,7 @@ extern "C" {
  * @param style_params Параметры стиля субтитров.
  * @return 0 в случае успеха, -1 или другой код ошибки FFmpeg в случае неудачи.
  */
-int VTL_sub_BurnToVideo(const char* input_video, const char* input_subs, VTL_sub_Format subs_format, const char* output_video, const VTL_sub_StyleParams* style_params);
+VTL_AppResult VTL_sub_BurnToVideo(const char* input_video, const char* input_subs, VTL_sub_Format subs_format, const char* output_video, const VTL_sub_StyleParams* style_params);
 
 #ifdef __cplusplus
 }

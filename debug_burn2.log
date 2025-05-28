@@ -1,0 +1,13 @@
+[DEBUG] ASS path: /Users/anderybis/Desktop/vtl-1/VTL/test/data/output.ass
+[DEBUG] filter_spec: subtitles=filename='/Users/anderybis/Desktop/vtl-1/VTL/test/data/output.ass':original_size=720x1280,format=pix_fmts=yuv420p
+[Parsed_subtitles_0 @ 0x122f11b20] libass API version: 0x1703000
+[Parsed_subtitles_0 @ 0x122f11b20] libass source: tarball: 0.17.3
+[Parsed_subtitles_0 @ 0x122f11b20] Shaper: FriBidi 1.0.15 (SIMPLE) HarfBuzz-ng 11.2.1 (COMPLEX)
+[Parsed_subtitles_0 @ 0x122f11b20] Using font provider coretext
+[in @ 0x122f11720] Changing video frame properties on the fly is not supported by all filters.
+[in @ 0x122f11720] filter context - w: 720 h: 1280 fmt: 0 csp: unknown range: unknown, incoming frame - w: 720 h: 1280 fmt: 0 csp: bt709 range: tv pts_time: 0.04
+[Parsed_subtitles_0 @ 0x122f11b20] fontselect: (Arial, 400, 0) -> /System/Library/Fonts/Supplemental/Arial.ttf, -1, ArialMT
+[h264_videotoolbox @ 0x12490cce0] Color range not set for yuv420p. Using MPEG range.
+[mp4 @ 0x124813c20] Starting second pass: moving the moov atom to the beginning of the file
+[DEBUG] temp_ass_path:  (не удалось открыть)
+[aac @ 0x122f14420] Qavg: 757.473

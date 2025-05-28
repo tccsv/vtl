@@ -32,19 +32,18 @@ typedef VTL_StandartString VTL_sub_FontName;
 typedef uint_least8_t VTL_sub_Size;
 typedef uint_least8_t VTL_sub_ColorPart;
 
-typedef struct _VTL_sub_color_RGB
-{
+typedef struct VTL_sub_ColorRGB {
     VTL_sub_ColorPart r;
     VTL_sub_ColorPart g;
     VTL_sub_ColorPart b;
-} VTL_sub_color_RGB;
+} VTL_sub_ColorRGB;
 
 typedef struct _VTL_sub_Params
 {
     VTL_sub_HorizontalAlign horizontal_align;
-    VTL_sub_color_RGB color;    
-    VTL_sub_color_RGB background_color;    
-    VTL_sub_color_RGB outline_color;
+    VTL_sub_ColorRGB color;    
+    VTL_sub_ColorRGB background_color;    
+    VTL_sub_ColorRGB outline_color;
     VTL_sub_Size text_size;
     VTL_sub_Size margin;
     VTL_sub_FontName font_name;
@@ -63,12 +62,12 @@ typedef struct _VTL_sub_Str
     size_t length;
 } VTL_sub_Str;
 
-typedef struct _VTL_Sub
+typedef struct _VTL_sub_Subtitles
 {
     VTL_sub_MetaData meta_data;
     VTL_BufferData* data;
     size_t length;
-} VTL_Sub;
+} VTL_sub_Subtitles;
 
 // Универсальное представление одного субтитра (для любого формата)
 typedef struct VTL_sub_Entry {
@@ -87,9 +86,9 @@ typedef struct VTL_sub_List {
 
 // Функции для VTL_sub_Params
 VTL_AppResult VTL_sub_ParamsSetHorizontalAlign(VTL_sub_Params* p_params, VTL_sub_HorizontalAlign align);
-VTL_AppResult VTL_sub_ParamsSetColor(VTL_sub_Params* p_params, VTL_sub_color_RGB color);
-VTL_AppResult VTL_sub_ParamsSetBackgroundColor(VTL_sub_Params* p_params, VTL_sub_color_RGB background_color);
-VTL_AppResult VTL_sub_ParamsSetOutlineColor(VTL_sub_Params* p_params, VTL_sub_color_RGB outline_color);
+VTL_AppResult VTL_sub_ParamsSetColor(VTL_sub_Params* p_params, VTL_sub_ColorRGB color);
+VTL_AppResult VTL_sub_ParamsSetBackgroundColor(VTL_sub_Params* p_params, VTL_sub_ColorRGB background_color);
+VTL_AppResult VTL_sub_ParamsSetOutlineColor(VTL_sub_Params* p_params, VTL_sub_ColorRGB outline_color);
 VTL_AppResult VTL_sub_ParamsSetTextSize(VTL_sub_Params* p_params, VTL_sub_Size text_size);
 VTL_AppResult VTL_sub_ParamsSetMargin(VTL_sub_Params* p_params, VTL_sub_Size margin);
 VTL_AppResult VTL_sub_ParamsSetFontName(VTL_sub_Params* p_params, VTL_sub_FontName font_name);
@@ -115,9 +114,6 @@ VTL_AppResult VTL_sub_LoadFromFile(const char* file_path, VTL_sub_Format* detect
 // Если format равен VTL_sub_format_kUNKNOWN, пытается определить формат по расширению file_path.
 // Если p_sub_list равен NULL или file_path равен NULL, возвращает ошибку.
 VTL_AppResult VTL_sub_SaveToFile(const char* file_path, VTL_sub_Format format, const VTL_sub_List* p_sub_list, const VTL_sub_StyleParams* style_params);
-
-// Вспомогательная функция для дублирования строки или возврата NULL, если src равен NULL
-char* VTL_sub_StrdupNullable(const char* src);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 #include <VTL/test/VTL_test_data.h>
-#include <VTL/media_container/sub/VTL_sub_read.h>
+#include <VTL/media_container/sub/infra/VTL_sub_read.h>
 
 unsigned int VTL_global_test_fails = 0;
 

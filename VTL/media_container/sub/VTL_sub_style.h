@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <VTL/VTL_app_result.h>
 
 // Параметры оформления субтитров
 typedef struct VTL_sub_StyleParams {
@@ -24,7 +25,7 @@ typedef struct VTL_sub_StyleParams {
 } VTL_sub_StyleParams;
 
 // Загрузка параметров оформления из JSON-файла
-int VTL_sub_StyleLoadFromJson(const char* json_file, VTL_sub_StyleParams* style_params);
+VTL_AppResult VTL_sub_StyleLoadFromJson(const char* json_file, VTL_sub_StyleParams* style_params);
 
 #ifdef __cplusplus
 }
