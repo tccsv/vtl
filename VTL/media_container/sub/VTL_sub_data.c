@@ -256,7 +256,6 @@ VTL_AppResult VTL_sub_ArgbToAssStr(uint32_t argb, char* buf, size_t bufsz) {
     return VTL_res_kOk;
 }
 
-// --- Новый код: прототипы вспомогательных функций ---
 static VTL_AppResult VTL_sub_ParseSrt(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list);
 static VTL_AppResult VTL_sub_ParseAss(VTL_BufferData* p_buffer_data, VTL_sub_List** pp_sub_list);
 
@@ -275,7 +274,7 @@ VTL_AppResult VTL_sub_Parse(VTL_BufferData* p_buffer_data, VTL_sub_Format format
     }
 }
 
-// --- Новый код: реализация вспомогательных функций ---
+// Разбитые методы
 static VTL_AppResult VTL_sub_ParseSrt(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list) {
     VTL_AppResult res = VTL_res_kOk;
     int error = 0;
