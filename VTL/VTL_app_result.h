@@ -11,6 +11,7 @@ extern "C"
 typedef enum _VTL_AppResult 
 {
     VTL_res_kOk = 0,
+    VTL_res_kError = -1,
     
     
     VTL_res_video_fs_r_kMissingFileErr = 1,
