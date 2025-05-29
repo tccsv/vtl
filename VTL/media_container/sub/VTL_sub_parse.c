@@ -119,9 +119,9 @@ static void VTL_sub_ReadSubtitleTextBlock(FILE* f, char* textbuf, size_t buf_siz
     *p = '\0'; // Завершаем строку текста
 }
 
-static VTL_AppResult VTL_sub_ParseFile_SRT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
-static VTL_AppResult VTL_sub_ParseFile_VTT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
-static VTL_AppResult VTL_sub_ParseFile_ASS(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
+static VTL_AppResult VTL_sub_ParseFileSRT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
+static VTL_AppResult VTL_sub_ParseFileVTT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
+static VTL_AppResult VTL_sub_ParseFileASS(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
 
 // Парсинг субтитров из файла в список
 VTL_AppResult VTL_sub_ParseFile(const char* input_file, VTL_sub_Format input_format, VTL_sub_List* out_list) {
@@ -138,11 +138,11 @@ VTL_AppResult VTL_sub_ParseFile(const char* input_file, VTL_sub_Format input_for
     VTL_AppResult res = VTL_res_kOk;
 
     if (input_format == VTL_sub_format_kSRT) {
-        res = VTL_sub_ParseFile_SRT(f, &arr, &arr_cap, &arr_len);
+        res = VTL_sub_ParseFileSRT(f, &arr, &arr_cap, &arr_len);
     } else if (input_format == VTL_sub_format_kVTT) {
-        res = VTL_sub_ParseFile_VTT(f, &arr, &arr_cap, &arr_len);
+        res = VTL_sub_ParseFileVTT(f, &arr, &arr_cap, &arr_len);
     } else if (input_format == VTL_sub_format_kASS) {
-        res = VTL_sub_ParseFile_ASS(f, &arr, &arr_cap, &arr_len);
+        res = VTL_sub_ParseFileASS(f, &arr, &arr_cap, &arr_len);
     } else {
         fclose(f);
         out_list->entries = NULL;
@@ -164,7 +164,7 @@ VTL_AppResult VTL_sub_ParseFile(const char* input_file, VTL_sub_Format input_for
     return VTL_res_kOk;
 }
 
-static VTL_AppResult VTL_sub_ParseFile_SRT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr) {
+static VTL_AppResult VTL_sub_ParseFileSRT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr) {
     char line_buffer[1024];
     char text_buffer[2048];
     VTL_AppResult res = VTL_res_kOk;
@@ -199,7 +199,7 @@ static VTL_AppResult VTL_sub_ParseFile_SRT(FILE* f, VTL_sub_Entry** arr_ptr, siz
     return VTL_res_kOk;
 }
 
-static VTL_AppResult VTL_sub_ParseFile_VTT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr) {
+static VTL_AppResult VTL_sub_ParseFileVTT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr) {
     char line_buffer[1024];
     char text_buffer[2048];
     VTL_AppResult res = VTL_res_kOk;
@@ -241,7 +241,7 @@ static VTL_AppResult VTL_sub_ParseFile_VTT(FILE* f, VTL_sub_Entry** arr_ptr, siz
     return VTL_res_kOk;
 }
 
-static VTL_AppResult VTL_sub_ParseFile_ASS(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr) {
+static VTL_AppResult VTL_sub_ParseFileASS(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr) {
     char line_buffer[1024];
     VTL_AppResult res = VTL_res_kOk;
     int found_events = 0;
