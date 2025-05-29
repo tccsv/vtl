@@ -446,3 +446,22 @@ VTL_AppResult VTL_content_platform_tg_mediagroup_audio_SendNow(
     VTL_net_api_data_TG api_data; INIT();
     return VTL_content_platform_tg_send_media_group(&api_data, "audio", file_names, file_count, NULL) ? VTL_res_kOk : VTL_res_kError;
 }
+
+// Media group only document
+VTL_AppResult VTL_content_platform_tg_mediagroup_document_SendNow(
+    const VTL_Filename file_names[], size_t file_count)
+{
+    VTL_net_api_data_TG api_data; INIT();
+    return VTL_content_platform_tg_send_media_group(&api_data, "document", file_names, file_count, NULL) ? VTL_res_kOk : VTL_res_kError;
+}
+
+
+// Media group only animation (e.g., GIF)
+VTL_AppResult VTL_content_platform_tg_mediagroup_animation_SendNow(
+    const VTL_Filename file_names[], size_t file_count)
+{
+    VTL_net_api_data_TG api_data; INIT();
+    for (size_t i = 0; i < file_count; ++i) {
+    VTL_content_platform_tg_animation_SendNow(file_names[i]);
+    }
+}
