@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KERNEL_SOURCE
+#define VTL_SUB_OPENCL_KERNEL_SOURCE_CLEAN_TAGS
 "__kernel void clean_tags(__global const char* in_data, __global int* offsets, __global int* lengths, __global char* out_data, __global int* out_offsets) {\n"
 "    int idx = get_global_id(0);\n"
 "    int in_offset = offsets[idx];\n"

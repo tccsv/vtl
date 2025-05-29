@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KERNEL_SOURCE
+#define VTL_SUB_OPENCL_KERNEL_SOURCE_DETECT_ENCODING
 "__kernel void detect_encoding(__global const char* in_data, __global int* offsets, __global int* lengths, __global int* out_encodings) {\n"
 "    int idx = get_global_id(0);\n"
 "    int in_offset = offsets[idx];\n"
@@ -59,7 +59,7 @@ VTL_AppResult VTL_sub_OpenclDetectEncoding(const char** in_texts, int** out_enco
     if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
     queue = clCreateCommandQueue(context, device, 0, &err);
     if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
-    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, &VTL_SUB_OPENCL_KERNEL_SOURCE_DETECT_ENCODING, NULL, &err);
     if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
     err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KERNEL_SOURCE
+#define VTL_SUB_OPENCL_KERNEL_SOURCE_FORMAT_TIME
 "__kernel void format_time(__global const double* in_times, __global char* out_data, __global int* out_offsets, int format) {\n"
 "    int idx = get_global_id(0);\n"
 "    double t = in_times[idx];\n"
@@ -41,7 +41,7 @@ VTL_AppResult VTL_sub_OpenclFormatTime(const double* in_times, char*** out_texts
     if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
     queue = clCreateCommandQueue(context, device, 0, &err);
     if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
-    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, &VTL_SUB_OPENCL_KERNEL_SOURCE_FORMAT_TIME, NULL, &err);
     if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
     err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }
