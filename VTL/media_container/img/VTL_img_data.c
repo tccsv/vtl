@@ -85,25 +85,21 @@ static int init_filter_graph(VTL_img_data_t* img_data, const char* filter_descr)
     return VTL_IMG_SUCCESS;
 }
 
-// Применение фильтра к изображению
 VTL_AppResult VTL_img_apply_filter(VTL_img_data_t* img_data, const VTL_ImageFilter* filter)
 {
     if (!img_data || !filter || !img_data->current_frame) {
         return VTL_IMG_ERROR_INVALID_PARAM;
     }
 
-    // Инициализируем граф фильтров
     int ret = init_filter_graph(img_data, filter->filter_desc);
     if (ret != VTL_IMG_SUCCESS) {
         return ret;
     }
 
-    // Отправляем кадр в фильтр
     if (av_buffersrc_add_frame_flags(img_data->buffersrc_ctx, img_data->current_frame, AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
         return VTL_IMG_ERROR_FILTER;
     }
 
-    // Получаем отфильтрованный кадр
     AVFrame* filtered_frame = av_frame_alloc();
     if (!filtered_frame) {
         return VTL_IMG_ERROR_MEMORY;
@@ -115,14 +111,12 @@ VTL_AppResult VTL_img_apply_filter(VTL_img_data_t* img_data, const VTL_ImageFilt
         return VTL_IMG_ERROR_FILTER;
     }
 
-    // Заменяем текущий кадр отфильтрованным
     av_frame_free(&img_data->current_frame);
     img_data->current_frame = filtered_frame;
 
     return VTL_IMG_SUCCESS;
 }
 
-// Конвертация формата изображения
 VTL_AppResult VTL_img_convert_format(VTL_img_data_t* img_data, enum AVPixelFormat dst_format)
 {
     if (!img_data || !img_data->current_frame) {
@@ -133,7 +127,6 @@ VTL_AppResult VTL_img_convert_format(VTL_img_data_t* img_data, enum AVPixelForma
         return VTL_IMG_SUCCESS;
     }
 
-    // Создаем контекст для конвертации
     img_data->sws_ctx = sws_getContext(
         img_data->current_frame->width,
         img_data->current_frame->height,
@@ -151,7 +144,6 @@ VTL_AppResult VTL_img_convert_format(VTL_img_data_t* img_data, enum AVPixelForma
         return VTL_IMG_ERROR_MEMORY;
     }
 
-    // Создаем новый кадр для конвертированного изображения
     AVFrame* dst_frame = av_frame_alloc();
     if (!dst_frame) {
         sws_freeContext(img_data->sws_ctx);
@@ -170,7 +162,6 @@ VTL_AppResult VTL_img_convert_format(VTL_img_data_t* img_data, enum AVPixelForma
         return VTL_IMG_ERROR_MEMORY;
     }
 
-    // Конвертируем изображение
     if (sws_scale(
         img_data->sws_ctx,
         (const uint8_t* const*)img_data->current_frame->data,
@@ -186,7 +177,6 @@ VTL_AppResult VTL_img_convert_format(VTL_img_data_t* img_data, enum AVPixelForma
         return VTL_IMG_ERROR_DECODE;
     }
 
-    // Освобождаем старый кадр и устанавливаем новый
     av_frame_free(&img_data->current_frame);
     img_data->current_frame = dst_frame;
 

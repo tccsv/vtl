@@ -8,21 +8,17 @@ VTL_AppResult VTL_img_read_from_file(const char* filename, VTL_img_data_t* img_d
         return VTL_IMG_ERROR_INVALID_PARAM;
     }
 
-    // Инициализация контекста
     memset(img_data, 0, sizeof(VTL_img_data_t));
 
-    // Открываем файл
     if (avformat_open_input(&img_data->format_ctx, filename, NULL, NULL) < 0) {
         return VTL_IMG_ERROR_FILE_NOT_FOUND;
     }
 
-    // Получаем информацию о потоках
     if (avformat_find_stream_info(img_data->format_ctx, NULL) < 0) {
         avformat_close_input(&img_data->format_ctx);
         return VTL_IMG_ERROR_FILE_ACCESS;
     }
 
-    // Находим видеопоток
     int video_stream_index = av_find_best_stream(
         img_data->format_ctx,
         AVMEDIA_TYPE_VIDEO,
@@ -37,7 +33,6 @@ VTL_AppResult VTL_img_read_from_file(const char* filename, VTL_img_data_t* img_d
         return VTL_IMG_ERROR_FORMAT_NOT_SUPPORTED;
     }
 
-    // Получаем кодек
     const AVCodec* decoder = avcodec_find_decoder(
         img_data->format_ctx->streams[video_stream_index]->codecpar->codec_id
     );
@@ -47,14 +42,12 @@ VTL_AppResult VTL_img_read_from_file(const char* filename, VTL_img_data_t* img_d
         return VTL_IMG_ERROR_FORMAT_NOT_SUPPORTED;
     }
 
-    // Создаем контекст кодера
     img_data->codec_ctx = avcodec_alloc_context3(decoder);
     if (!img_data->codec_ctx) {
         avformat_close_input(&img_data->format_ctx);
         return VTL_IMG_ERROR_MEMORY;
     }
 
-    // Копируем параметры кодека
     if (avcodec_parameters_to_context(img_data->codec_ctx, 
         img_data->format_ctx->streams[video_stream_index]->codecpar) < 0) {
         avcodec_free_context(&img_data->codec_ctx);
@@ -62,14 +55,12 @@ VTL_AppResult VTL_img_read_from_file(const char* filename, VTL_img_data_t* img_d
         return VTL_IMG_ERROR_DECODE;
     }
 
-    // Открываем кодек
     if (avcodec_open2(img_data->codec_ctx, decoder, NULL) < 0) {
         avcodec_free_context(&img_data->codec_ctx);
         avformat_close_input(&img_data->format_ctx);
         return VTL_IMG_ERROR_DECODE;
     }
 
-    // Читаем первый кадр
     AVPacket* packet = av_packet_alloc();
     AVFrame* frame = av_frame_alloc();
     int ret = VTL_IMG_ERROR_DECODE;

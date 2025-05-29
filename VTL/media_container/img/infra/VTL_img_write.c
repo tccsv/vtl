@@ -34,7 +34,6 @@ VTL_AppResult VTL_img_write_to_file(const char* filename, const VTL_img_data_t* 
     AVPacket *packet = av_packet_alloc();
     AVFrame *rgb_frame = NULL;
 
-    // Конвертируем в rgb24
     rgb_frame = av_frame_alloc();
     if (!rgb_frame) {
         cleanup_resources(NULL, NULL, NULL, packet);
@@ -49,7 +48,6 @@ VTL_AppResult VTL_img_write_to_file(const char* filename, const VTL_img_data_t* 
         return VTL_IMG_ERROR_MEMORY;
     }
 
-    // Создаем контекст для конвертации
     SwsContext *sws_ctx = sws_getContext(
         img_data->current_frame->width, img_data->current_frame->height, img_data->current_frame->format,
         rgb_frame->width, rgb_frame->height, rgb_frame->format,
@@ -60,7 +58,6 @@ VTL_AppResult VTL_img_write_to_file(const char* filename, const VTL_img_data_t* 
         return VTL_IMG_ERROR_MEMORY;
     }
 
-    // Конвертируем кадр
     if (sws_scale(sws_ctx, 
                   (const uint8_t * const*)img_data->current_frame->data, img_data->current_frame->linesize,
                   0, img_data->current_frame->height,
