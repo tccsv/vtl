@@ -15,7 +15,8 @@ extern "C"
 typedef struct {
     const char* token;       
     const char* chat_id;     
-    const char* text;        
+    const char* text;
+    const char *filename;        
     const char* parse_mode;
 } VTL_net_api_data_TG;
 
@@ -65,15 +66,18 @@ VTL_AppResult VTL_content_platform_tg_mediagroup_video_SendNow(const VTL_Filenam
 VTL_AppResult VTL_content_platform_tg_mediagroup_video_w_text_SendNow(const VTL_Filename file_names[], size_t file_count, const VTL_Filename text_file_name);
 //Mediagroup only video with marked text
 VTL_AppResult VTL_content_platform_tg_mediagroup_video_w_marked_text_SendNow(const VTL_Filename file_names[], size_t file_count, const VTL_Filename text_file_name);
-
-
-
 //Mediagroup only audio
 VTL_AppResult VTL_content_platform_tg_mediagroup_audio_SendNow(const VTL_Filename file_names[], size_t file_count);
+
+
+
+
 //Mediagroup audio with text
 VTL_AppResult VTL_content_platform_tg_mediagroup_audio_w_text_SendNow(const VTL_Filename file_names[], size_t file_count, const VTL_Filename text_file_name);
 //Mediagroup audio with marked text
 VTL_AppResult VTL_content_platform_tg_mediagroup_audio_w_marked_text_SendNow(const VTL_Filename file_names[], size_t file_count, const VTL_Filename text_file_name);
+
+
 //Mideagroup only document
 VTL_AppResult VTL_content_platform_tg_mediagroup_document_SendNow(const VTL_Filename file_names[], size_t file_count);
 //Mediagroup only document with text
