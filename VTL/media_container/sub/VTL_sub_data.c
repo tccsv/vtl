@@ -256,320 +256,318 @@ VTL_AppResult VTL_sub_ArgbToAssStr(uint32_t argb, char* buf, size_t bufsz) {
     return VTL_res_kOk;
 }
 
-// Функции для парсинга и форматирования субтитров
+// --- Новый код: прототипы вспомогательных функций ---
+static VTL_AppResult VTL_sub_ParseSrtVtt(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list);
+static VTL_AppResult VTL_sub_ParseAss(VTL_BufferData* p_buffer_data, VTL_sub_List** pp_sub_list);
+
 VTL_AppResult VTL_sub_Parse(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list)
 {
+    if (!p_buffer_data || !p_buffer_data->data || !pp_sub_list) {
+        return VTL_res_kNullArgument;
+    }
+    *pp_sub_list = NULL;
+    if (format == VTL_sub_format_kSRT || format == VTL_sub_format_kVTT) {
+        return VTL_sub_ParseSrtVtt(p_buffer_data, format, pp_sub_list);
+    } else if (format == VTL_sub_format_kASS) {
+        return VTL_sub_ParseAss(p_buffer_data, pp_sub_list);
+    } else {
+        return VTL_res_kUnsupportedFormat;
+    }
+}
+
+// --- Новый код: реализация вспомогательных функций ---
+static VTL_AppResult VTL_sub_ParseSrtVtt(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list) {
     VTL_AppResult res = VTL_res_kOk;
     int error = 0;
-    if (!p_buffer_data || !p_buffer_data->data || !pp_sub_list) {
-        res = VTL_res_kNullArgument;
-        error = 1;
-    }
+    res = VTL_sub_ListCreate(pp_sub_list);
+    if (res != VTL_res_kOk) error = 1;
+    char* buffer_copy = NULL;
     if (!error) {
-        *pp_sub_list = NULL; // Инициализируем на случай ошибки до создания списка
+        buffer_copy = strdup(p_buffer_data->data);
+        if (!buffer_copy) {
+            VTL_sub_ListDestroy(pp_sub_list);
+            return VTL_res_kAllocError;
+        }
     }
-    if (!error && (format == VTL_sub_format_kSRT || format == VTL_sub_format_kVTT)) {
-        res = VTL_sub_ListCreate(pp_sub_list);
-        if (res != VTL_res_kOk) error = 1;
-        char* buffer_copy = NULL;
-        if (!error) {
-            buffer_copy = strdup(p_buffer_data->data);
-            if (!buffer_copy) {
-                VTL_sub_ListDestroy(pp_sub_list);
-                res = VTL_res_kAllocError;
-                error = 1;
-            }
+    char* saveptr1 = NULL;
+    char* line = NULL;
+    VTL_sub_Entry current_entry;
+    int state = 0;
+    char text_buffer[4096] = {0};
+    int auto_increment_index = 1;
+    char vtt_id_buffer[256];
+    memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+    line = strtok_r(buffer_copy, "\n", &saveptr1);
+    while (!error && line != NULL) {
+        char* trimmed_line = NULL;
+        if (VTL_sub_TrimWhitespace(line, &trimmed_line) != VTL_res_kOk) {
+            res = VTL_res_kArgumentError; error = 1; break;
         }
-        char* saveptr1 = NULL;
-        char* line = NULL;
-        VTL_sub_Entry current_entry;
-        int state = 0;
-        char text_buffer[4096] = {0};
-        int auto_increment_index = 1;
-        int vtt_header_checked = 0;
-        char vtt_id_buffer[256];
-        if (!error) {
-            memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-            line = strtok_r(buffer_copy, "\n", &saveptr1);
-        }
-        while (!error && line != NULL) {
-            char* trimmed_line = NULL;
-            if (VTL_sub_TrimWhitespace(line, &trimmed_line) != VTL_res_kOk) {
-                res = VTL_res_kArgumentError; error = 1;
-                if (buffer_copy) free(buffer_copy);
-                if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                return res;
-            }
-            line = trimmed_line;
-            if (strlen(line) == 0) {
-                // Пустая строка — завершение субтитра
-                if (state == 2 && strlen(text_buffer) > 0) {
-                    current_entry.text = strdup(text_buffer);
-                    if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; }
-                    if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
-                    res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
-                    free(current_entry.text);
-                    current_entry.text = NULL;
-                    if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                    if (res != VTL_res_kOk) { error = 1; }
-                    memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                    memset(text_buffer, 0, sizeof(text_buffer));
-                    state = 0;
-                }
-                line = strtok_r(NULL, "\n", &saveptr1);
-                continue;
-            }
-            // --- Новый блок: если встречаем новую временную метку или индекс, а state==2 и есть текст — добавляем предыдущий субтитр ---
-            int is_new_index = 0, is_new_time = 0;
-            int parsed_index = -1;
-            char time_start_str[30], time_end_str[30];
-            if (sscanf(line, "%d", &parsed_index) == 1 && strstr(line, "-->") == NULL) is_new_index = 1;
-            if (sscanf(line, "%29s --> %29s", time_start_str, time_end_str) == 2 && strstr(line, "-->") != NULL) is_new_time = 1;
-            if ((is_new_index || is_new_time) && state == 2 && strlen(text_buffer) > 0) {
+        line = trimmed_line;
+        if (strlen(line) == 0) {
+            if (state == 2 && strlen(text_buffer) > 0) {
                 current_entry.text = strdup(text_buffer);
-                if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; }
+                if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; break; }
                 if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
                 res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
                 free(current_entry.text);
                 current_entry.text = NULL;
                 if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                if (res != VTL_res_kOk) { error = 1; }
+                if (res != VTL_res_kOk) { error = 1; break; }
                 memset(&current_entry, 0, sizeof(VTL_sub_Entry));
                 memset(text_buffer, 0, sizeof(text_buffer));
                 state = 0;
             }
-            // --- Конец нового блока ---
-            if (state == 0) {
-                if (is_new_index) {
-                    current_entry.index = parsed_index;
-                    state = 1;
-                } else if (is_new_time) {
-                    double start = 0, end = 0;
-                    if (VTL_sub_ParseSrtVttTime(time_start_str, &start) != VTL_res_kOk ||
-                        VTL_sub_ParseSrtVttTime(time_end_str, &end) != VTL_res_kOk) {
-                        state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                    } else {
-                        current_entry.start = start;
-                        current_entry.end = end;
-                        if (current_entry.start >= 0 && current_entry.end >= 0 && current_entry.end >= current_entry.start) {
-                            state = 2;
-                            if (format == VTL_sub_format_kVTT) current_entry.index = 0;
-                            else if (current_entry.index == 0) current_entry.index = auto_increment_index++;
-                            memset(text_buffer, 0, sizeof(text_buffer));
-                        } else {
-                            state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                        }
-                    }
-                } else if (format == VTL_sub_format_kVTT) {
-                    if (strlen(line) < sizeof(vtt_id_buffer)) {
-                        current_entry.style = strdup(line);
-                        if(!current_entry.style) { res = VTL_res_kAllocError; error = 1; }
-                        current_entry.index = 0;
-                        state = 1;
-                    } else {
-                        state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                    }
-                } else {
-                    state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                }
-            } else if (state == 1) {
-                char time_start_str[30], time_end_str[30];
-                if (sscanf(line, "%29s --> %29s", time_start_str, time_end_str) == 2 && strstr(line, "-->") != NULL) {
-                    double start = 0, end = 0;
-                    if (VTL_sub_ParseSrtVttTime(time_start_str, &start) != VTL_res_kOk ||
-                        VTL_sub_ParseSrtVttTime(time_end_str, &end) != VTL_res_kOk) {
-                        state = 0;
-                        if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                        memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                    } else {
-                        current_entry.start = start;
-                        current_entry.end = end;
-                        if (current_entry.start < 0 || current_entry.end < 0 || current_entry.end < current_entry.start) {
-                            state = 0;
-                            if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                            memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                        } else {
-                            state = 2;
-                            if (format == VTL_sub_format_kSRT && current_entry.index == 0) current_entry.index = auto_increment_index++;
-                            memset(text_buffer, 0, sizeof(text_buffer));
-                        }
-                    }
-                } else {
-                    state = 0;
-                    if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                    memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                }
-            } else if (state == 2) {
-                if (strlen(text_buffer) + strlen(line) + 2 < sizeof(text_buffer)) {
-                    if (strlen(text_buffer) > 0) {
-                        strcat(text_buffer, "\n");
-                    }
-                    strcat(text_buffer, line);
-                } else {
-                    res = VTL_res_kMemoryError;
-                    error = 1;
-                }
-            }
             line = strtok_r(NULL, "\n", &saveptr1);
+            continue;
         }
-        if (!error && state == 2 && strlen(text_buffer) > 0) {
+        int is_new_index = 0, is_new_time = 0;
+        int parsed_index = -1;
+        char time_start_str[30], time_end_str[30];
+        if (sscanf(line, "%d", &parsed_index) == 1 && strstr(line, "-->") == NULL) is_new_index = 1;
+        if (sscanf(line, "%29s --> %29s", time_start_str, time_end_str) == 2 && strstr(line, "-->") != NULL) is_new_time = 1;
+        if ((is_new_index || is_new_time) && state == 2 && strlen(text_buffer) > 0) {
             current_entry.text = strdup(text_buffer);
-            if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; }
+            if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; break; }
             if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
             res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
             free(current_entry.text);
             current_entry.text = NULL;
             if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-            if (res != VTL_res_kOk) { error = 1; }
+            if (res != VTL_res_kOk) { error = 1; break; }
+            memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+            memset(text_buffer, 0, sizeof(text_buffer));
+            state = 0;
         }
-        if (buffer_copy) free(buffer_copy);
-        if (error) {
-            if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-        }
-        return res;
-    }
-    if (!error && format == VTL_sub_format_kASS) {
-        res = VTL_sub_ListCreate(pp_sub_list);
-        if (res != VTL_res_kOk) error = 1;
-        char* buffer_copy = strdup(p_buffer_data->data);
-        if (!buffer_copy) {
-            VTL_sub_ListDestroy(pp_sub_list);
-            res = VTL_res_kAllocError;
-            error = 1;
-        }
-        char* saveptr_line;
-        char* line = strtok_r(buffer_copy, "\n", &saveptr_line);
-        
-        VTL_sub_Entry current_entry;
-        int auto_ass_index = 1;
-        
-        enum AssSection { SECTION_NONE, SECTION_SCRIPT_INFO, SECTION_STYLES, SECTION_EVENTS } current_section = SECTION_NONE;
-        
-        int format_start = -1, format_end = -1, format_style = -1, format_text = -1;
-        int num_event_format_fields = 0;
-
-        while (!error && line != NULL) {
-            char* trimmed_line = NULL;
-            if (VTL_sub_TrimWhitespace(line, &trimmed_line) != VTL_res_kOk) {
-                res = VTL_res_kArgumentError; error = 1;
-                if (buffer_copy) free(buffer_copy);
-                if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                return res;
-            }
-            line = trimmed_line;
-            if (line[0] == '[' && line[strlen(line)-1] == ']') { 
-                char* trimmed_section_line = line;
-                VTL_sub_TrimWhitespace(line, &trimmed_section_line);
-                if (strcmp(trimmed_section_line, "[Script Info]") == 0) current_section = SECTION_SCRIPT_INFO;
-                else if (strcmp(trimmed_section_line, "[V4+ Styles]") == 0) current_section = SECTION_STYLES;
-                else if (strcmp(trimmed_section_line, "[Events]") == 0) current_section = SECTION_EVENTS;
-                else current_section = SECTION_NONE;
-                line = strtok_r(NULL, "\n", &saveptr_line);
-            } else if (current_section == SECTION_EVENTS) {
-                if (strncmp(line, "Format:", 7) == 0) {
-                }
-                if (strncmp(line, "Dialogue:", 9) == 0) {
-                    if (format_start == -1 || format_end == -1 || format_text == -1 || num_event_format_fields == 0) {
-                        line = strtok_r(NULL, "\n", &saveptr_line);
+        if (state == 0) {
+            if (is_new_index) {
+                current_entry.index = parsed_index;
+                state = 1;
+            } else if (is_new_time) {
+                double start = 0, end = 0;
+                if (VTL_sub_ParseSrtVttTime(time_start_str, &start) != VTL_res_kOk ||
+                    VTL_sub_ParseSrtVttTime(time_end_str, &end) != VTL_res_kOk) {
+                    state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+                } else {
+                    current_entry.start = start;
+                    current_entry.end = end;
+                    if (current_entry.start >= 0 && current_entry.end >= 0 && current_entry.end >= current_entry.start) {
+                        state = 2;
+                        if (format == VTL_sub_format_kVTT) current_entry.index = 0;
+                        else if (current_entry.index == 0) current_entry.index = auto_increment_index++;
+                        memset(text_buffer, 0, sizeof(text_buffer));
                     } else {
+                        state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+                    }
+                }
+            } else if (format == VTL_sub_format_kVTT) {
+                if (strlen(line) < sizeof(vtt_id_buffer)) {
+                    current_entry.style = strdup(line);
+                    if(!current_entry.style) { res = VTL_res_kAllocError; error = 1; break; }
+                    current_entry.index = 0;
+                    state = 1;
+                } else {
+                    state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+                }
+            } else {
+                state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+            }
+        } else if (state == 1) {
+            char time_start_str2[30], time_end_str2[30];
+            if (sscanf(line, "%29s --> %29s", time_start_str2, time_end_str2) == 2 && strstr(line, "-->") != NULL) {
+                double start = 0, end = 0;
+                if (VTL_sub_ParseSrtVttTime(time_start_str2, &start) != VTL_res_kOk ||
+                    VTL_sub_ParseSrtVttTime(time_end_str2, &end) != VTL_res_kOk) {
+                    state = 0;
+                    if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
+                    memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+                } else {
+                    current_entry.start = start;
+                    current_entry.end = end;
+                    if (current_entry.start < 0 || current_entry.end < 0 || current_entry.end < current_entry.start) {
+                        state = 0;
+                        if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
                         memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                        char* dialogue_line_ptr = line + 9; 
-                        
-                        char* fields[64]; 
-                        int field_count = 0;
-                        char* current_pos = dialogue_line_ptr;
-                        int N = num_event_format_fields; 
+                    } else {
+                        state = 2;
+                        if (format == VTL_sub_format_kSRT && current_entry.index == 0) current_entry.index = auto_increment_index++;
+                        memset(text_buffer, 0, sizeof(text_buffer));
+                    }
+                }
+            } else {
+                state = 0;
+                if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
+                memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+            }
+        } else if (state == 2) {
+            if (strlen(text_buffer) + strlen(line) + 2 < sizeof(text_buffer)) {
+                if (strlen(text_buffer) > 0) {
+                    strcat(text_buffer, "\n");
+                }
+                strcat(text_buffer, line);
+            } else {
+                res = VTL_res_kMemoryError;
+                error = 1;
+                break;
+            }
+        }
+        line = strtok_r(NULL, "\n", &saveptr1);
+    }
+    if (!error && state == 2 && strlen(text_buffer) > 0) {
+        current_entry.text = strdup(text_buffer);
+        if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; }
+        if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
+        res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
+        free(current_entry.text);
+        current_entry.text = NULL;
+        if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
+        if (res != VTL_res_kOk) { error = 1; }
+    }
+    if (buffer_copy) free(buffer_copy);
+    if (error) {
+        if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
+    }
+    return res;
+}
 
-                        for (int k = 0; k < N-1; ++k) {
-                            if (current_pos == NULL || *current_pos == '\0') {
-                                fields[field_count++] = "";
-                                continue;
-                            }
-                            char* comma_pos = strchr(current_pos, ',');
-                            if (comma_pos) {
-                                *comma_pos = '\0';
-                                char* trimmed_field = NULL;
-                                if (VTL_sub_TrimWhitespace(current_pos, &trimmed_field) != VTL_res_kOk) {
-                                    res = VTL_res_kArgumentError; error = 1;
-                                    if (buffer_copy) free(buffer_copy);
-                                    if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                                    return res;
-                                }
-                                fields[field_count++] = trimmed_field;
-                                current_pos = comma_pos + 1;
-                            } else {
-                                char* trimmed_field = NULL;
-                                if (VTL_sub_TrimWhitespace(current_pos, &trimmed_field) != VTL_res_kOk) {
-                                    res = VTL_res_kArgumentError; error = 1;
-                                    if (buffer_copy) free(buffer_copy);
-                                    if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                                    return res;
-                                }
-                                fields[field_count++] = trimmed_field;
-                                current_pos = NULL;
-                            }
-                        }
-                        while (field_count < N-1) {
-                            fields[field_count++] = "";
-                        }
-                        if (current_pos) {
-                            size_t len = strlen(current_pos);
-                            while (len > 0 && (current_pos[len-1] == '\n' || current_pos[len-1] == '\r' || current_pos[len-1] == ' ')) {
-                                current_pos[--len] = '\0';
-                            }
-                            fields[field_count++] = current_pos;
+static VTL_AppResult VTL_sub_ParseAss(VTL_BufferData* p_buffer_data, VTL_sub_List** pp_sub_list) {
+    VTL_AppResult res = VTL_res_kOk;
+    int error = 0;
+    res = VTL_sub_ListCreate(pp_sub_list);
+    if (res != VTL_res_kOk) error = 1;
+    char* buffer_copy = strdup(p_buffer_data->data);
+    if (!buffer_copy) {
+        VTL_sub_ListDestroy(pp_sub_list);
+        return VTL_res_kAllocError;
+    }
+    char* saveptr_line;
+    char* line = strtok_r(buffer_copy, "\n", &saveptr_line);
+    VTL_sub_Entry current_entry;
+    int auto_ass_index = 1;
+    enum AssSection { SECTION_NONE, SECTION_SCRIPT_INFO, SECTION_STYLES, SECTION_EVENTS } current_section = SECTION_NONE;
+    int format_start = -1, format_end = -1, format_style = -1, format_text = -1;
+    int num_event_format_fields = 0;
+    while (!error && line != NULL) {
+        char* trimmed_line = NULL;
+        if (VTL_sub_TrimWhitespace(line, &trimmed_line) != VTL_res_kOk) {
+            res = VTL_res_kArgumentError; error = 1; break;
+        }
+        line = trimmed_line;
+        if (line[0] == '[' && line[strlen(line)-1] == ']') { 
+            char* trimmed_section_line = line;
+            VTL_sub_TrimWhitespace(line, &trimmed_section_line);
+            if (strcmp(trimmed_section_line, "[Script Info]") == 0) current_section = SECTION_SCRIPT_INFO;
+            else if (strcmp(trimmed_section_line, "[V4+ Styles]") == 0) current_section = SECTION_STYLES;
+            else if (strcmp(trimmed_section_line, "[Events]") == 0) current_section = SECTION_EVENTS;
+            else current_section = SECTION_NONE;
+            line = strtok_r(NULL, "\n", &saveptr_line);
+            continue;
+        }
+        // --- обработка формата событий ---
+        if (current_section == SECTION_EVENTS && strncmp(line, "Format:", 7) == 0) {
+            // Определяем индексы нужных полей
+            char* format_line = line + 7;
+            char* token;
+            int idx = 0;
+            char* saveptr_fmt;
+            token = strtok_r(format_line, ",", &saveptr_fmt);
+            while (token) {
+                char* trimmed_token = token;
+                VTL_sub_TrimWhitespace(token, &trimmed_token);
+                if (strcasecmp(trimmed_token, "Start") == 0) format_start = idx;
+                else if (strcasecmp(trimmed_token, "End") == 0) format_end = idx;
+                else if (strcasecmp(trimmed_token, "Style") == 0) format_style = idx;
+                else if (strcasecmp(trimmed_token, "Text") == 0) format_text = idx;
+                idx++;
+                token = strtok_r(NULL, ",", &saveptr_fmt);
+            }
+            num_event_format_fields = idx;
+            line = strtok_r(NULL, "\n", &saveptr_line);
+            continue;
+        }
+        // --- обработка диалогов ---
+        if (current_section == SECTION_EVENTS && strncmp(line, "Dialogue:", 9) == 0) {
+            if (format_start == -1 || format_end == -1 || format_text == -1 || num_event_format_fields == 0) {
+                line = strtok_r(NULL, "\n", &saveptr_line);
+                continue;
+            }
+            memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+            char* dialogue_line_ptr = line + 9; 
+            char* fields[64]; 
+            int field_count = 0;
+            char* current_pos = dialogue_line_ptr;
+            int N = num_event_format_fields; 
+            for (int k = 0; k < N-1; ++k) {
+                if (current_pos == NULL || *current_pos == '\0') {
+                    fields[field_count++] = "";
+                    continue;
+                }
+                char* comma_pos = strchr(current_pos, ',');
+                if (comma_pos) {
+                    *comma_pos = '\0';
+                    char* trimmed_field = current_pos;
+                    VTL_sub_TrimWhitespace(current_pos, &trimmed_field);
+                    fields[field_count++] = trimmed_field;
+                    current_pos = comma_pos + 1;
+                } else {
+                    char* trimmed_field = current_pos;
+                    VTL_sub_TrimWhitespace(current_pos, &trimmed_field);
+                    fields[field_count++] = trimmed_field;
+                    current_pos = NULL;
+                }
+            }
+            while (field_count < N-1) {
+                fields[field_count++] = "";
+            }
+            if (current_pos) {
+                size_t len = strlen(current_pos);
+                while (len > 0 && (current_pos[len-1] == '\n' || current_pos[len-1] == '\r' || current_pos[len-1] == ' ')) {
+                    current_pos[--len] = '\0';
+                }
+                fields[field_count++] = current_pos;
+            } else {
+                fields[field_count++] = "";
+            }
+            if (field_count == num_event_format_fields) {
+                double start = 0, end = 0;
+                char* start_field = fields[format_start];
+                char* end_field = fields[format_end];
+                char* trimmed_start = start_field, *trimmed_end = end_field;
+                VTL_sub_TrimWhitespace(start_field, &trimmed_start);
+                VTL_sub_TrimWhitespace(end_field, &trimmed_end);
+                if ((format_start < field_count && VTL_sub_ParseAssTime(trimmed_start, &start) != VTL_res_kOk) ||
+                    (format_end < field_count && VTL_sub_ParseAssTime(trimmed_end, &end) != VTL_res_kOk)) {
+                    // skip
+                } else {
+                    current_entry.start = start;
+                    current_entry.end = end;
+                    char* raw_text = (format_text < field_count) ? fields[format_text] : NULL;
+                    if (raw_text) {
+                        char* cleaned_text = NULL;
+                        if (VTL_sub_StripAssTags(raw_text, &cleaned_text) == VTL_res_kOk && cleaned_text) {
+                            current_entry.text = strdup(cleaned_text);
+                            free(cleaned_text);
+                            if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; }
                         } else {
-                            fields[field_count++] = "";
+                            res = VTL_res_kAllocError; error = 1;
                         }
-                        if (field_count == num_event_format_fields) {
-                            double start = 0, end = 0;
-                            char* start_field = fields[format_start];
-                            char* end_field = fields[format_end];
-                            char* trimmed_start = start_field, *trimmed_end = end_field;
-                            VTL_sub_TrimWhitespace(start_field, &trimmed_start);
-                            VTL_sub_TrimWhitespace(end_field, &trimmed_end);
-                            int sscanf_start = 0, sscanf_end = 0;
-                            int h, m, s, cs;
-                            sscanf_start = sscanf(trimmed_start, "%d:%d:%d.%d", &h, &m, &s, &cs);
-                            sscanf_end = sscanf(trimmed_end, "%d:%d:%d.%d", &h, &m, &s, &cs);
-                            if ((format_start < field_count && VTL_sub_ParseAssTime(trimmed_start, &start) != VTL_res_kOk) ||
-                                (format_end < field_count && VTL_sub_ParseAssTime(trimmed_end, &end) != VTL_res_kOk)) {
-                            } else {
-                                current_entry.start = start;
-                                current_entry.end = end;
-                                char* raw_text = (format_text < field_count) ? fields[format_text] : NULL;
-                                if (raw_text) {
-                                    char* cleaned_text = NULL;
-                                    if (VTL_sub_StripAssTags(raw_text, &cleaned_text) == VTL_res_kOk && cleaned_text) {
-                                        current_entry.text = strdup(cleaned_text);
-                                        free(cleaned_text);
-                                        if (!current_entry.text) { res = VTL_res_kAllocError; error = 1; }
-                                    } else {
-                                        res = VTL_res_kAllocError; error = 1;
-                                    }
-                                } else {
-                                    res = VTL_res_kAllocError; error = 1;
-                                }
-                                if (!error && current_entry.text) {
-                                    res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
-                                    if (res != VTL_res_kOk) { error = 1; }
-                                    if (current_entry.text) { free(current_entry.text); current_entry.text = NULL; }
-                                    if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                                }
-                            }
-                        }
+                    } else {
+                        res = VTL_res_kAllocError; error = 1;
+                    }
+                    if (!error && current_entry.text) {
+                        res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
+                        if (res != VTL_res_kOk) { error = 1; }
+                        if (current_entry.text) { free(current_entry.text); current_entry.text = NULL; }
+                        if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
                     }
                 }
             }
-            line = strtok_r(NULL, "\n", &saveptr_line);
         }
-        if (!error && res == VTL_res_kOk) {
-            if ((*pp_sub_list)) {
-            }
-        }
+        line = strtok_r(NULL, "\n", &saveptr_line);
     }
-    if (!error && format != VTL_sub_format_kSRT && format != VTL_sub_format_kVTT && format != VTL_sub_format_kASS) {
-        res = VTL_res_kUnsupportedFormat;
+    if (buffer_copy) free(buffer_copy);
+    if (error) {
+        if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
     }
     return res;
 }
