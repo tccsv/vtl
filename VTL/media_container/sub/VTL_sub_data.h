@@ -102,6 +102,7 @@ VTL_AppResult VTL_sub_ListRemoveEntry(VTL_sub_List* p_sub_list, size_t index);
 
 // Функции для парсинга и форматирования субтитров
 VTL_AppResult VTL_sub_Parse(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list);
+VTL_AppResult VTL_sub_ParseSrt(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list);
 VTL_AppResult VTL_sub_FormatToString(const VTL_sub_List* p_sub_list, VTL_sub_Format format, VTL_BufferData** pp_buffer_data, const VTL_sub_StyleParams* style_params);
 
 // Функции для загрузки и сохранения списка субтитров из/в файл
