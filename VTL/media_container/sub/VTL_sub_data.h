@@ -116,6 +116,15 @@ VTL_AppResult VTL_sub_LoadFromFile(const char* file_path, VTL_sub_Format* detect
 // Если p_sub_list равен NULL или file_path равен NULL, возвращает ошибку.
 VTL_AppResult VTL_sub_SaveToFile(const char* file_path, VTL_sub_Format format, const VTL_sub_List* p_sub_list, const VTL_sub_StyleParams* style_params);
 
+VTL_AppResult VTL_sub_ParseSrtAllocBuffer(const VTL_BufferData* p_buffer_data, char** buffer_copy_out);
+VTL_AppResult VTL_sub_ParseSrtProcessBlock(VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list);
+void VTL_sub_ParseSrtResetEntry(VTL_sub_Entry* entry, char* text_buffer);
+VTL_AppResult VTL_sub_ParseSrtHandleEmptyLine(int* state, VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list);
+VTL_AppResult VTL_sub_ParseSrtHandleNewIndexTime(int* state, int is_new_index, int is_new_time, VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list);
+VTL_AppResult VTL_sub_ParseSrtHandleTimeLine(VTL_sub_Entry* current_entry, char* time_start_str, char* time_end_str, VTL_sub_Format format, int* state, int* auto_increment_index, char* text_buffer);
+VTL_AppResult VTL_sub_ParseSrtHandleVttId(VTL_sub_Entry* current_entry, const char* line, int* state);
+VTL_AppResult VTL_sub_ParseSrtAddText(char* text_buffer, const char* line);
+
 #ifdef __cplusplus
 }
 #endif

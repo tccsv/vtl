@@ -274,19 +274,25 @@ VTL_AppResult VTL_sub_Parse(VTL_BufferData* p_buffer_data, VTL_sub_Format format
     }
 }
 
-// Разбитые методы
+// --- Прототипы вспомогательных функций для парсинга SRT/VTT ---
+static VTL_AppResult VTL_sub_ParseSrtAllocBuffer(const VTL_BufferData* p_buffer_data, char** buffer_copy_out);
+static VTL_AppResult VTL_sub_ParseSrtProcessBlock(VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list);
+static void VTL_sub_ParseSrtResetEntry(VTL_sub_Entry* entry, char* text_buffer);
+static VTL_AppResult VTL_sub_ParseSrtHandleEmptyLine(int* state, VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list);
+static VTL_AppResult VTL_sub_ParseSrtHandleNewIndexTime(int* state, int is_new_index, int is_new_time, VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list);
+static VTL_AppResult VTL_sub_ParseSrtHandleTimeLine(VTL_sub_Entry* current_entry, char* time_start_str, char* time_end_str, VTL_sub_Format format, int* state, int* auto_increment_index, char* text_buffer);
+static VTL_AppResult VTL_sub_ParseSrtHandleVttId(VTL_sub_Entry* current_entry, const char* line, int* state);
+static VTL_AppResult VTL_sub_ParseSrtAddText(char* text_buffer, const char* line);
+
 static VTL_AppResult VTL_sub_ParseSrt(VTL_BufferData* p_buffer_data, VTL_sub_Format format, VTL_sub_List** pp_sub_list) {
     VTL_AppResult res = VTL_res_kOk;
-    int error = 0;
     res = VTL_sub_ListCreate(pp_sub_list);
-    if (res != VTL_res_kOk) error = 1;
+    if (res != VTL_res_kOk) return res;
     char* buffer_copy = NULL;
-    if (!error) {
-        buffer_copy = strdup(p_buffer_data->data);
-        if (!buffer_copy) {
-            VTL_sub_ListDestroy(pp_sub_list);
-            return VTL_res_kAllocError;
-        }
+    res = VTL_sub_ParseSrtAllocBuffer(p_buffer_data, &buffer_copy);
+    if (res != VTL_res_kOk) {
+        VTL_sub_ListDestroy(pp_sub_list);
+        return res;
     }
     char* saveptr1 = NULL;
     char* line = NULL;
@@ -297,37 +303,18 @@ static VTL_AppResult VTL_sub_ParseSrt(VTL_BufferData* p_buffer_data, VTL_sub_For
     char vtt_id_buffer[256];
     memset(&current_entry, 0, sizeof(VTL_sub_Entry));
     line = strtok_r(buffer_copy, "\n", &saveptr1);
-    while (!error && line != NULL) {
+    while (line != NULL) {
         char* trimmed_line = NULL;
         if (VTL_sub_TrimWhitespace(line, &trimmed_line) != VTL_res_kOk) {
-            if (buffer_copy) free(buffer_copy);
-            if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
+            free(buffer_copy);
+            VTL_sub_ListDestroy(pp_sub_list);
             return VTL_res_kArgumentError;
         }
         line = trimmed_line;
         int skip_line = 0;
         if (strlen(line) == 0) {
-            if (state == 2 && strlen(text_buffer) > 0) {
-                current_entry.text = strdup(text_buffer);
-                if (!current_entry.text) {
-                    if (buffer_copy) free(buffer_copy);
-                    if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                    return VTL_res_kAllocError;
-                }
-                if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
-                res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
-                free(current_entry.text);
-                current_entry.text = NULL;
-                if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                if (res != VTL_res_kOk) {
-                    if (buffer_copy) free(buffer_copy);
-                    if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                    return res;
-                }
-                memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                memset(text_buffer, 0, sizeof(text_buffer));
-                state = 0;
-            }
+            res = VTL_sub_ParseSrtHandleEmptyLine(&state, &current_entry, text_buffer, format, &auto_increment_index, pp_sub_list);
+            if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
             skip_line = 1;
         }
         int is_new_index = 0, is_new_time = 0;
@@ -336,129 +323,130 @@ static VTL_AppResult VTL_sub_ParseSrt(VTL_BufferData* p_buffer_data, VTL_sub_For
         if (!skip_line && sscanf(line, "%d", &parsed_index) == 1 && strstr(line, "-->") == NULL) is_new_index = 1;
         if (!skip_line && sscanf(line, "%29s --> %29s", time_start_str, time_end_str) == 2 && strstr(line, "-->") != NULL) is_new_time = 1;
         if (!skip_line && (is_new_index || is_new_time) && state == 2 && strlen(text_buffer) > 0) {
-            current_entry.text = strdup(text_buffer);
-            if (!current_entry.text) {
-                if (buffer_copy) free(buffer_copy);
-                if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                return VTL_res_kAllocError;
-            }
-            if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
-            res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
-            free(current_entry.text);
-            current_entry.text = NULL;
-            if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-            if (res != VTL_res_kOk) {
-                if (buffer_copy) free(buffer_copy);
-                if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                return res;
-            }
-            memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-            memset(text_buffer, 0, sizeof(text_buffer));
-            state = 0;
+            res = VTL_sub_ParseSrtHandleNewIndexTime(&state, is_new_index, is_new_time, &current_entry, text_buffer, format, &auto_increment_index, pp_sub_list);
+            if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
         }
         if (!skip_line && state == 0) {
             if (is_new_index) {
                 current_entry.index = parsed_index;
                 state = 1;
             } else if (is_new_time) {
-                double start = 0, end = 0;
-                if (VTL_sub_ParseSrtVttTime(time_start_str, &start) != VTL_res_kOk ||
-                    VTL_sub_ParseSrtVttTime(time_end_str, &end) != VTL_res_kOk) {
-                    state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                } else {
-                    current_entry.start = start;
-                    current_entry.end = end;
-                    if (current_entry.start >= 0 && current_entry.end >= 0 && current_entry.end >= current_entry.start) {
-                        state = 2;
-                        if (format == VTL_sub_format_kVTT) current_entry.index = 0;
-                        else if (current_entry.index == 0) current_entry.index = auto_increment_index++;
-                        memset(text_buffer, 0, sizeof(text_buffer));
-                    } else {
-                        state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                    }
-                }
+                res = VTL_sub_ParseSrtHandleTimeLine(&current_entry, time_start_str, time_end_str, format, &state, &auto_increment_index, text_buffer);
+                if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
             } else if (format == VTL_sub_format_kVTT) {
-                if (strlen(line) < sizeof(vtt_id_buffer)) {
-                    current_entry.style = strdup(line);
-                    if(!current_entry.style) {
-                        if (buffer_copy) free(buffer_copy);
-                        if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                        return VTL_res_kAllocError;
-                    }
-                    current_entry.index = 0;
-                    state = 1;
-                } else {
-                    state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                }
+                res = VTL_sub_ParseSrtHandleVttId(&current_entry, line, &state);
+                if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
             } else {
-                state = 0; memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+                state = 0; VTL_sub_ParseSrtResetEntry(&current_entry, text_buffer);
             }
         } else if (!skip_line && state == 1) {
             char time_start_str2[30], time_end_str2[30];
             if (sscanf(line, "%29s --> %29s", time_start_str2, time_end_str2) == 2 && strstr(line, "-->") != NULL) {
-                double start = 0, end = 0;
-                if (VTL_sub_ParseSrtVttTime(time_start_str2, &start) != VTL_res_kOk ||
-                    VTL_sub_ParseSrtVttTime(time_end_str2, &end) != VTL_res_kOk) {
-                    state = 0;
-                    if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                    memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                } else {
-                    current_entry.start = start;
-                    current_entry.end = end;
-                    if (current_entry.start < 0 || current_entry.end < 0 || current_entry.end < current_entry.start) {
-                        state = 0;
-                        if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                        memset(&current_entry, 0, sizeof(VTL_sub_Entry));
-                    } else {
-                        state = 2;
-                        if (format == VTL_sub_format_kSRT && current_entry.index == 0) current_entry.index = auto_increment_index++;
-                        memset(text_buffer, 0, sizeof(text_buffer));
-                    }
-                }
+                res = VTL_sub_ParseSrtHandleTimeLine(&current_entry, time_start_str2, time_end_str2, format, &state, &auto_increment_index, text_buffer);
+                if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
             } else {
                 state = 0;
                 if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-                memset(&current_entry, 0, sizeof(VTL_sub_Entry));
+                VTL_sub_ParseSrtResetEntry(&current_entry, text_buffer);
             }
         } else if (!skip_line && state == 2) {
-            if (strlen(text_buffer) + strlen(line) + 2 < sizeof(text_buffer)) {
-                if (strlen(text_buffer) > 0) {
-                    strcat(text_buffer, "\n");
-                }
-                strcat(text_buffer, line);
-            } else {
-                if (buffer_copy) free(buffer_copy);
-                if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-                return VTL_res_kSubtitleTextOverflow;
-            }
+            res = VTL_sub_ParseSrtAddText(text_buffer, line);
+            if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
         }
-        if (!error) {
-            line = strtok_r(NULL, "\n", &saveptr1);
-        }
+        line = strtok_r(NULL, "\n", &saveptr1);
     }
-    if (!error && state == 2 && strlen(text_buffer) > 0) {
-        current_entry.text = strdup(text_buffer);
-        if (!current_entry.text) {
-            if (buffer_copy) free(buffer_copy);
-            if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-            return VTL_res_kAllocError;
-        }
-        if(current_entry.index == 0 && format == VTL_sub_format_kSRT) current_entry.index = auto_increment_index++;
-        res = VTL_sub_ListAddEntry(*pp_sub_list, &current_entry);
-        free(current_entry.text);
-        current_entry.text = NULL;
-        if (current_entry.style) { free(current_entry.style); current_entry.style = NULL; }
-        if (res != VTL_res_kOk) {
-            if (buffer_copy) free(buffer_copy);
-            if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-            return res;
-        }
+    if (state == 2 && strlen(text_buffer) > 0) {
+        res = VTL_sub_ParseSrtProcessBlock(&current_entry, text_buffer, format, &auto_increment_index, pp_sub_list);
+        if (res != VTL_res_kOk) { free(buffer_copy); VTL_sub_ListDestroy(pp_sub_list); return res; }
     }
-    if (buffer_copy) free(buffer_copy);
-    if (error) {
-        if (*pp_sub_list) VTL_sub_ListDestroy(pp_sub_list);
-    }
+    free(buffer_copy);
     return res;
+}
+
+static VTL_AppResult VTL_sub_ParseSrtHandleEmptyLine(int* state, VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list) {
+    if (*state == 2 && strlen(text_buffer) > 0) {
+        VTL_AppResult res = VTL_sub_ParseSrtProcessBlock(current_entry, text_buffer, format, auto_increment_index, pp_sub_list);
+        VTL_sub_ParseSrtResetEntry(current_entry, text_buffer);
+        *state = 0;
+        return res;
+    }
+    return VTL_res_kOk;
+}
+
+static VTL_AppResult VTL_sub_ParseSrtHandleNewIndexTime(int* state, int is_new_index, int is_new_time, VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list) {
+    VTL_AppResult res = VTL_sub_ParseSrtProcessBlock(current_entry, text_buffer, format, auto_increment_index, pp_sub_list);
+    VTL_sub_ParseSrtResetEntry(current_entry, text_buffer);
+    *state = 0;
+    return res;
+}
+
+static VTL_AppResult VTL_sub_ParseSrtHandleTimeLine(VTL_sub_Entry* current_entry, char* time_start_str, char* time_end_str, VTL_sub_Format format, int* state, int* auto_increment_index, char* text_buffer) {
+    double start = 0, end = 0;
+    if (VTL_sub_ParseSrtVttTime(time_start_str, &start) != VTL_res_kOk ||
+        VTL_sub_ParseSrtVttTime(time_end_str, &end) != VTL_res_kOk) {
+        *state = 0; VTL_sub_ParseSrtResetEntry(current_entry, text_buffer);
+        return VTL_res_kOk;
+    }
+    current_entry->start = start;
+    current_entry->end = end;
+    if (current_entry->start >= 0 && current_entry->end >= 0 && current_entry->end >= current_entry->start) {
+        *state = 2;
+        if (format == VTL_sub_format_kVTT) current_entry->index = 0;
+        else if (current_entry->index == 0) current_entry->index = (*auto_increment_index)++;
+        memset(text_buffer, 0, 4096);
+    } else {
+        *state = 0; VTL_sub_ParseSrtResetEntry(current_entry, text_buffer);
+    }
+    return VTL_res_kOk;
+}
+
+static VTL_AppResult VTL_sub_ParseSrtHandleVttId(VTL_sub_Entry* current_entry, const char* line, int* state) {
+    if (strlen(line) < 256) {
+        current_entry->style = strdup(line);
+        if (!current_entry->style) return VTL_res_kAllocError;
+        current_entry->index = 0;
+        *state = 1;
+        return VTL_res_kOk;
+    } else {
+        *state = 0;
+        VTL_sub_ParseSrtResetEntry(current_entry, NULL);
+        return VTL_res_kOk;
+    }
+}
+
+static VTL_AppResult VTL_sub_ParseSrtAddText(char* text_buffer, const char* line) {
+    if (strlen(text_buffer) + strlen(line) + 2 < 4096) {
+        if (strlen(text_buffer) > 0) {
+            strcat(text_buffer, "\n");
+        }
+        strcat(text_buffer, line);
+        return VTL_res_kOk;
+    } else {
+        return VTL_res_kSubtitleTextOverflow;
+    }
+}
+
+static VTL_AppResult VTL_sub_ParseSrtAllocBuffer(const VTL_BufferData* p_buffer_data, char** buffer_copy_out) {
+    *buffer_copy_out = strdup(p_buffer_data->data);
+    if (!*buffer_copy_out) return VTL_res_kAllocError;
+    return VTL_res_kOk;
+}
+
+static VTL_AppResult VTL_sub_ParseSrtProcessBlock(VTL_sub_Entry* current_entry, char* text_buffer, VTL_sub_Format format, int* auto_increment_index, VTL_sub_List** pp_sub_list) {
+    current_entry->text = strdup(text_buffer);
+    if (!current_entry->text) return VTL_res_kAllocError;
+    if(current_entry->index == 0 && format == VTL_sub_format_kSRT) current_entry->index = (*auto_increment_index)++;
+    VTL_AppResult res = VTL_sub_ListAddEntry(*pp_sub_list, current_entry);
+    free(current_entry->text);
+    current_entry->text = NULL;
+    if (current_entry->style) { free(current_entry->style); current_entry->style = NULL; }
+    if (res != VTL_res_kOk) return res;
+    return VTL_res_kOk;
+}
+
+static void VTL_sub_ParseSrtResetEntry(VTL_sub_Entry* entry, char* text_buffer) {
+    memset(entry, 0, sizeof(VTL_sub_Entry));
+    memset(text_buffer, 0, 4096);
 }
 
 static VTL_AppResult VTL_sub_ParseAss(VTL_BufferData* p_buffer_data, VTL_sub_List** pp_sub_list) {
