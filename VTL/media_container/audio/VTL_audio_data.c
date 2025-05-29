@@ -8,7 +8,7 @@
 #include <libavutil/opt.h>
 
 
-static enum AVCodecID VTL_codec_to_avcodec_id(VTL_audio_Codec codec) {
+static enum AVCodecID VTL_audio_ToAvcodecId(VTL_audio_Codec codec) {
     switch (codec) {
         case VTL_audio_codec_kAAC:    return AV_CODEC_ID_AAC;
         case VTL_audio_codec_kVorbis: return AV_CODEC_ID_VORBIS;
@@ -18,8 +18,8 @@ static enum AVCodecID VTL_codec_to_avcodec_id(VTL_audio_Codec codec) {
     }
 }
 
-static AVCodecContext* VTL_audio_prepare_encoder(const VTL_audio_Params *p_new, const AVCodec **out_codec) {
-    enum AVCodecID codec_id = VTL_codec_to_avcodec_id(p_new->codec);
+static AVCodecContext* VTL_audio_PrepareEncoder(const VTL_audio_Params *p_new, const AVCodec **out_codec) {
+    enum AVCodecID codec_id = VTL_audio_ToAvcodecId(p_new->codec);
     if (codec_id == AV_CODEC_ID_NONE) return NULL;
     const AVCodec *codec = avcodec_find_encoder(codec_id);
     if (!codec) return NULL;
@@ -38,7 +38,7 @@ static AVCodecContext* VTL_audio_prepare_encoder(const VTL_audio_Params *p_new, 
     return ctx;
 }
 
-static AVFrame* VTL_audio_prepare_frame(AVCodecContext *ctx, VTL_audio_Data *src) {
+static AVFrame* VTL_audio_PrepareFrame(AVCodecContext *ctx, VTL_audio_Data *src) {
     AVFrame *frame = av_frame_alloc();
     if (!frame) return NULL;
     frame->nb_samples = ctx->frame_size > 0 ? ctx->frame_size : 1024;
@@ -54,7 +54,7 @@ static AVFrame* VTL_audio_prepare_frame(AVCodecContext *ctx, VTL_audio_Data *src
     return frame;
 }
 
-static AVPacket* VTL_audio_encode_frame(AVCodecContext *ctx, AVFrame *frame) {
+static AVPacket* VTL_audio_EncodeFrame(AVCodecContext *ctx, AVFrame *frame) {
     AVPacket *pkt = av_packet_alloc();
     if (!pkt) return NULL;
     int ret = avcodec_send_frame(ctx, frame);
@@ -70,7 +70,7 @@ static AVPacket* VTL_audio_encode_frame(AVCodecContext *ctx, AVFrame *frame) {
     return pkt;
 }
 
-static void VTL_audio_replace_buffer(VTL_audio_Data **pp_audio_part, AVPacket *pkt) {
+static void VTL_audio_ReplaceBuffer(VTL_audio_Data **pp_audio_part, AVPacket *pkt) {
     VTL_audio_Data *out = (VTL_audio_Data*)malloc(sizeof(VTL_audio_Data));
     out->data = (char*)malloc(pkt->size);
     memcpy(out->data, pkt->data, pkt->size);
@@ -80,23 +80,23 @@ static void VTL_audio_replace_buffer(VTL_audio_Data **pp_audio_part, AVPacket *p
     *pp_audio_part = out;
 }
 
-VTL_AppResult VTL_audio_Data_Encode(VTL_audio_Data **pp_audio_part, const VTL_audio_Params *p_old, const VTL_audio_Params *p_new) {
+VTL_AppResult VTL_audio_DataEncode(VTL_audio_Data **pp_audio_part, const VTL_audio_Params *p_old, const VTL_audio_Params *p_new) {
     if (!pp_audio_part || !*pp_audio_part || !p_new) return VTL_res_video_fs_r_kMissingFileErr;
     const AVCodec *codec = NULL;
-    AVCodecContext *ctx = VTL_audio_prepare_encoder(p_new, &codec);
+    AVCodecContext *ctx = VTL_audio_PrepareEncoder(p_new, &codec);
     if (!ctx) return VTL_res_video_fs_r_kMissingFileErr;
-    AVFrame *frame = VTL_audio_prepare_frame(ctx, *pp_audio_part);
+    AVFrame *frame = VTL_audio_PrepareFrame(ctx, *pp_audio_part);
     if (!frame) {
         avcodec_free_context(&ctx);
         return VTL_res_video_fs_r_kMissingFileErr;
     }
-    AVPacket *pkt = VTL_audio_encode_frame(ctx, frame);
+    AVPacket *pkt = VTL_audio_EncodeFrame(ctx, frame);
     if (!pkt) {
         av_frame_free(&frame);
         avcodec_free_context(&ctx);
         return VTL_res_video_fs_r_kMissingFileErr;
     }
-    VTL_audio_replace_buffer(pp_audio_part, pkt);
+    VTL_audio_ReplaceBuffer(pp_audio_part, pkt);
     av_frame_free(&frame);
     av_packet_free(&pkt);
     avcodec_free_context(&ctx);

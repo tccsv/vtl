@@ -4,7 +4,7 @@
 static VTL_AppResult VTL_audio_GenPart(VTL_audio_Data** pp_audio_part, const VTL_audio_Params* p_src_params, 
                                             const VTL_audio_Congif *p_config, VTL_audio_File* p_output)
 {
-    VTL_audio_Data_Encode(pp_audio_part, p_src_params, &p_config->params);
+    VTL_audio_DataEncode(pp_audio_part, p_src_params, &p_config->params);
     VTL_audio_WritePart(*pp_audio_part, p_output); 
     return VTL_res_kOk;
 }
