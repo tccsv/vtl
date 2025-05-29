@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// OpenCL-ядро: разбивает строку на подстроки не длиннее max_len, стараясь не разрывать слова
-const char* kernelSource =
+#define KERNEL_SOURCE
 "__kernel void split_long_lines(__global const char* in_data, __global int* offsets, __global int* lengths, __global int* max_len, __global int* out_offsets, __global int* out_lengths, __global int* out_counts) {\n"
 "    int idx = get_global_id(0);\n"
 "    int in_offset = offsets[idx];\n"
@@ -31,6 +30,13 @@ const char* kernelSource =
 "    out_counts[idx] = out_count;\n"
 "}\n";
 
+// Разделение длинных строк на несколько по максимальной длине (по словам)
+// in_texts: массив указателей на строки (вход)
+// out_texts: массив массивов строк (char***) — для каждой входной строки массив новых строк, выделяется внутри функции, освобождать вызывающему
+// out_counts: массив количества строк для каждого in_texts[i]
+// count: количество входных строк
+// max_len: максимальная длина строки
+// Возвращает 0 при успехе, иначе код ошибки
 VTL_AppResult VTL_sub_OpenclSplitLongLines(const char** in_texts, char**** out_texts, int** out_counts, size_t count, int max_len) {
     cl_int err;
     cl_platform_id platform;
@@ -39,6 +45,21 @@ VTL_AppResult VTL_sub_OpenclSplitLongLines(const char** in_texts, char**** out_t
     cl_command_queue queue;
     cl_program program;
     cl_kernel kernel;
+
+    err = clGetPlatformIDs(1, &platform, NULL);
+    if (err != CL_SUCCESS) return VTL_res_opencl_kPlatformError;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_DEFAULT, 1, &device, NULL);
+    if (err != CL_SUCCESS) return VTL_res_opencl_kDeviceError;
+    context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+    if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
+    queue = clCreateCommandQueue(context, device, 0, &err);
+    if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
+    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
+    if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
+    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
+    if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }
+    kernel = clCreateKernel(program, "split_long_lines", &err);
+    if (!kernel || err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kKernelError; }
 
     // Подготовка входных данных
     size_t* in_offsets = (size_t*)malloc(count * sizeof(size_t));
@@ -58,15 +79,12 @@ VTL_AppResult VTL_sub_OpenclSplitLongLines(const char** in_texts, char**** out_t
         pos += in_lengths[i];
     }
 
-    // Оценка максимального количества строк на одну входную (грубо: длина/max_len + 1)
     int* max_splits = (int*)malloc(count * sizeof(int));
     int total_splits = 0;
     for (size_t i = 0; i < count; ++i) {
         max_splits[i] = in_lengths[i] / max_len + 2;
         total_splits += max_splits[i];
     }
-
-    // Буферы для выходных длин и смещений
     int* out_lengths = (int*)calloc(total_splits, sizeof(int));
     int* out_offsets = (int*)malloc(count * sizeof(int));
     int* out_counts_arr = (int*)calloc(count, sizeof(int));
@@ -75,22 +93,6 @@ VTL_AppResult VTL_sub_OpenclSplitLongLines(const char** in_texts, char**** out_t
         out_offsets[i] = cur_offset;
         cur_offset += max_splits[i];
     }
-
-    // OpenCL init
-    err = clGetPlatformIDs(1, &platform, NULL);
-    if (err != CL_SUCCESS) goto cleanup; 
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_DEFAULT, 1, &device, NULL);
-    if (err != CL_SUCCESS) goto cleanup;
-    context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-    if (!context || err != CL_SUCCESS) goto cleanup;
-    queue = clCreateCommandQueue(context, device, 0, &err);
-    if (!queue || err != CL_SUCCESS) { clReleaseContext(context); goto cleanup; }
-    program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
-    if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); goto cleanup; }
-    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
-    if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); goto cleanup; }
-    kernel = clCreateKernel(program, "split_long_lines", &err);
-    if (!kernel || err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); goto cleanup; }
 
     cl_mem buf_in_data = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, total_in, in_data, &err);
     cl_mem buf_offsets = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, count * sizeof(int), in_offsets, &err);
@@ -110,17 +112,42 @@ VTL_AppResult VTL_sub_OpenclSplitLongLines(const char** in_texts, char**** out_t
 
     size_t global = count;
     err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global, NULL, 0, NULL, NULL);
-    if (err != CL_SUCCESS) goto cleanup_cl;
+    if (err != CL_SUCCESS) {
+        clReleaseMemObject(buf_in_data);
+        clReleaseMemObject(buf_offsets);
+        clReleaseMemObject(buf_lengths);
+        clReleaseMemObject(buf_max_len);
+        clReleaseMemObject(buf_out_offsets);
+        clReleaseMemObject(buf_out_lengths);
+        clReleaseMemObject(buf_out_counts);
+        clReleaseKernel(kernel);
+        clReleaseProgram(program);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
+        free(in_offsets); free(in_lengths); free(max_lens); free(in_data); free(max_splits); free(out_lengths); free(out_offsets); free(out_counts_arr);
+        return VTL_res_opencl_kLaunchError;
+    }
     clFinish(queue);
-
     err = clEnqueueReadBuffer(queue, buf_out_lengths, CL_TRUE, 0, total_splits * sizeof(int), out_lengths, 0, NULL, NULL);
     err |= clEnqueueReadBuffer(queue, buf_out_counts, CL_TRUE, 0, count * sizeof(int), out_counts_arr, 0, NULL, NULL);
-    if (err != CL_SUCCESS) goto cleanup_cl;
+    if (err != CL_SUCCESS) {
+        clReleaseMemObject(buf_in_data);
+        clReleaseMemObject(buf_offsets);
+        clReleaseMemObject(buf_lengths);
+        clReleaseMemObject(buf_max_len);
+        clReleaseMemObject(buf_out_offsets);
+        clReleaseMemObject(buf_out_lengths);
+        clReleaseMemObject(buf_out_counts);
+        clReleaseKernel(kernel);
+        clReleaseProgram(program);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
+        free(in_offsets); free(in_lengths); free(max_lens); free(in_data); free(max_splits); free(out_lengths); free(out_offsets); free(out_counts_arr);
+        return VTL_res_opencl_kReadBufferError;
+    }
 
-    // Формируем выходной массив массивов строк
     char*** result = (char***)malloc(count * sizeof(char**));
     int* result_counts = (int*)malloc(count * sizeof(int));
-    char* src;
     for (size_t i = 0; i < count; ++i) {
         int n = out_counts_arr[i];
         result_counts[i] = n;
@@ -134,13 +161,12 @@ VTL_AppResult VTL_sub_OpenclSplitLongLines(const char** in_texts, char**** out_t
             memcpy(result[i][j], in_texts[i] + pos, len);
             result[i][j][len] = '\0';
             pos += len;
-            while (in_texts[i][pos] == ' ') pos++; // пропуск пробелов
+            while (in_texts[i][pos] == ' ') pos++;
         }
     }
     *out_texts = result;
     *out_counts = result_counts;
 
-cleanup_cl:
     clReleaseMemObject(buf_in_data);
     clReleaseMemObject(buf_offsets);
     clReleaseMemObject(buf_lengths);
@@ -152,7 +178,6 @@ cleanup_cl:
     clReleaseProgram(program);
     clReleaseCommandQueue(queue);
     clReleaseContext(context);
-cleanup:
     free(in_offsets); free(in_lengths); free(max_lens); free(in_data); free(max_splits); free(out_lengths); free(out_offsets); free(out_counts_arr);
     return VTL_res_kOk;
 } 

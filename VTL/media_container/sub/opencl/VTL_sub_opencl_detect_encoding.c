@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// OpenCL-ядро для определения кодировки строки
-const char* kernelSource =
+#define KERNEL_SOURCE
 "__kernel void detect_encoding(__global const char* in_data, __global int* offsets, __global int* lengths, __global int* out_encodings) {\n"
 "    int idx = get_global_id(0);\n"
 "    int in_offset = offsets[idx];\n"
@@ -38,6 +37,11 @@ const char* kernelSource =
 "    out_encodings[idx] = encoding;\n"
 "}\n";
 
+// Определение кодировки для массива строк через OpenCL
+// in_texts: массив указателей на строки (вход)
+// out_encodings: массив int (выделяется внутри функции, освобождать вызывающему)
+// count: количество строк
+// Возвращает 0 при успехе, иначе код ошибки
 VTL_AppResult VTL_sub_OpenclDetectEncoding(const char** in_texts, int** out_encodings, size_t count) {
     cl_int err;
     cl_platform_id platform;
@@ -46,6 +50,21 @@ VTL_AppResult VTL_sub_OpenclDetectEncoding(const char** in_texts, int** out_enco
     cl_command_queue queue;
     cl_program program;
     cl_kernel kernel;
+
+    err = clGetPlatformIDs(1, &platform, NULL);
+    if (err != CL_SUCCESS) return VTL_res_opencl_kPlatformError;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_DEFAULT, 1, &device, NULL);
+    if (err != CL_SUCCESS) return VTL_res_opencl_kDeviceError;
+    context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+    if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
+    queue = clCreateCommandQueue(context, device, 0, &err);
+    if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
+    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
+    if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
+    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
+    if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }
+    kernel = clCreateKernel(program, "detect_encoding", &err);
+    if (!kernel || err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kKernelError; }
 
     size_t* in_offsets = (size_t*)malloc(count * sizeof(size_t));
     int* in_lengths = (int*)malloc(count * sizeof(int));
@@ -61,23 +80,7 @@ VTL_AppResult VTL_sub_OpenclDetectEncoding(const char** in_texts, int** out_enco
         memcpy(in_data + pos, in_texts[i], in_lengths[i]);
         pos += in_lengths[i];
     }
-
     int* encodings = (int*)malloc(count * sizeof(int));
-
-    err = clGetPlatformIDs(1, &platform, NULL);
-    if (err != CL_SUCCESS) goto cleanup;
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_DEFAULT, 1, &device, NULL);
-    if (err != CL_SUCCESS) goto cleanup;
-    context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-    if (!context || err != CL_SUCCESS) goto cleanup;
-    queue = clCreateCommandQueue(context, device, 0, &err);
-    if (!queue || err != CL_SUCCESS) { clReleaseContext(context); goto cleanup; }
-    program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
-    if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); goto cleanup; }
-    err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
-    if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); goto cleanup; }
-    kernel = clCreateKernel(program, "detect_encoding", &err);
-    if (!kernel || err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); goto cleanup; }
 
     cl_mem buf_in_data = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, total_in, in_data, &err);
     cl_mem buf_offsets = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, count * sizeof(int), in_offsets, &err);
@@ -91,15 +94,34 @@ VTL_AppResult VTL_sub_OpenclDetectEncoding(const char** in_texts, int** out_enco
 
     size_t global = count;
     err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global, NULL, 0, NULL, NULL);
-    if (err != CL_SUCCESS) goto cleanup_cl;
+    if (err != CL_SUCCESS) {
+        clReleaseMemObject(buf_in_data);
+        clReleaseMemObject(buf_offsets);
+        clReleaseMemObject(buf_lengths);
+        clReleaseMemObject(buf_out_encodings);
+        clReleaseKernel(kernel);
+        clReleaseProgram(program);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
+        free(in_offsets); free(in_lengths); free(in_data); free(encodings);
+        return VTL_res_opencl_kLaunchError;
+    }
     clFinish(queue);
-
     err = clEnqueueReadBuffer(queue, buf_out_encodings, CL_TRUE, 0, count * sizeof(int), encodings, 0, NULL, NULL);
-    if (err != CL_SUCCESS) goto cleanup_cl;
-
+    if (err != CL_SUCCESS) {
+        clReleaseMemObject(buf_in_data);
+        clReleaseMemObject(buf_offsets);
+        clReleaseMemObject(buf_lengths);
+        clReleaseMemObject(buf_out_encodings);
+        clReleaseKernel(kernel);
+        clReleaseProgram(program);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
+        free(in_offsets); free(in_lengths); free(in_data); free(encodings);
+        return VTL_res_opencl_kReadBufferError;
+    }
     *out_encodings = encodings;
 
-cleanup_cl:
     clReleaseMemObject(buf_in_data);
     clReleaseMemObject(buf_offsets);
     clReleaseMemObject(buf_lengths);
@@ -108,7 +130,6 @@ cleanup_cl:
     clReleaseProgram(program);
     clReleaseCommandQueue(queue);
     clReleaseContext(context);
-cleanup:
     free(in_offsets); free(in_lengths); free(in_data);
     return VTL_res_kOk;
 } 

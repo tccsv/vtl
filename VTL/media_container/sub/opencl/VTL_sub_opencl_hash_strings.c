@@ -5,8 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 
-// OpenCL-ядро для вычисления CRC32 для каждой строки
-const char* kernelSource =
+#define KERNEL_SOURCE
 "__kernel void hash_strings(__global const char* in_data, __global int* offsets, __global int* lengths, __global uint* out_hashes) {\n"
 "    int idx = get_global_id(0);\n"
 "    int in_offset = offsets[idx];\n"
@@ -40,7 +39,7 @@ VTL_AppResult VTL_sub_OpenclHashStrings(const char** in_texts, uint32_t** out_ha
     if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
     queue = clCreateCommandQueue(context, device, 0, &err);
     if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
-    program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
     if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
     err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }

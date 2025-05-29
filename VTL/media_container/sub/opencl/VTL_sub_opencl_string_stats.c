@@ -5,8 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 
-// OpenCL-ядро для вычисления статистики по строке
-const char* kernelSource =
+#define KERNEL_SOURCE
 "typedef struct {\n"
 "    uint length;\n"
 "    uint word_count;\n"
@@ -50,7 +49,7 @@ VTL_AppResult VTL_sub_OpenclStringStats(const char** in_texts, VTL_StringStats**
     if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
     queue = clCreateCommandQueue(context, device, 0, &err);
     if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
-    program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
     if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
     err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }

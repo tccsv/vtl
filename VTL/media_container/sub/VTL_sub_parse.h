@@ -17,6 +17,11 @@ VTL_AppResult VTL_sub_ParseFile(const char* input_file, VTL_sub_Format input_for
 // Освобождает память, выделенную для VTL_sub_List и его элементов
 VTL_AppResult VTL_sub_ListFree(VTL_sub_List* list);
 
+// --- static helpers ---
+static VTL_AppResult VTL_sub_ParseFile_SRT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
+static VTL_AppResult VTL_sub_ParseFile_VTT(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
+static VTL_AppResult VTL_sub_ParseFile_ASS(FILE* f, VTL_sub_Entry** arr_ptr, size_t* arr_cap_ptr, size_t* arr_len_ptr);
+
 #ifdef __cplusplus
 }
 #endif

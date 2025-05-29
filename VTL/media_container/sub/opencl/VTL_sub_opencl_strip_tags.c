@@ -4,14 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// OpenCL-ядро для удаления тегов из строк субтитров
-// Аргументы ядра:
-//   in_data     — общий буфер со всеми входными строками (склеены подряд)
-//   offsets     — массив смещений: где начинается каждая строка во входном буфере
-//   lengths     — массив длин: сколько символов в каждой строке
-//   out_data    — общий буфер для всех выходных строк (очищенных от тегов)
-//   out_offsets — массив смещений для выходных строк
-const char* kernelSource =
+#define KERNEL_SOURCE
 "__kernel void strip_tags(__global const char* in_data, __global int* offsets, __global int* lengths, __global char* out_data, __global int* out_offsets) {\n"
 "    int idx = get_global_id(0);\n" // Индекс текущей строки
 "    int in_offset = offsets[idx];\n" // Смещение начала строки во входном буфере
@@ -52,7 +45,7 @@ VTL_AppResult VTL_sub_OpenclStripTags(const char** in_texts, char** out_texts, s
     if (!context || err != CL_SUCCESS) return VTL_res_opencl_kContextError;
     queue = clCreateCommandQueue(context, device, 0, &err);
     if (!queue || err != CL_SUCCESS) { clReleaseContext(context); return VTL_res_opencl_kQueueError; }
-    program = clCreateProgramWithSource(context, 1, &kernelSource, NULL, &err);
+    program = clCreateProgramWithSource(context, 1, &KERNEL_SOURCE, NULL, &err);
     if (!program || err != CL_SUCCESS) { clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kProgramError; }
     err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err != CL_SUCCESS) { clReleaseProgram(program); clReleaseCommandQueue(queue); clReleaseContext(context); return VTL_res_opencl_kBuildError; }
