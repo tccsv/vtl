@@ -31,6 +31,43 @@ int main(void) {
         return 4;
     }
     printf("[OK] Blurred image saved to %s\n", output_path);
+
+    // --- Invert ---
+    AVFrame* inverted = NULL;
+    ret = VTL_img_invert(frame, &inverted, width, height, pix_fmt);
+    if (ret < 0) {
+        printf("[ERROR] Invert failed (OpenCL error: %d)\n", ret);
+    } else {
+        ret = VTL_img_save("output_invert.png", inverted);
+        if (ret < 0) printf("[ERROR] Failed to save inverted image\n");
+        else printf("[OK] Inverted image saved to output_invert.png\n");
+        av_frame_free(&inverted);
+    }
+
+    // --- Rotate 90 ---
+    AVFrame* rotated = NULL;
+    ret = VTL_img_rotate(frame, &rotated, width, height, pix_fmt, 90);
+    if (ret < 0) {
+        printf("[ERROR] Rotate failed (OpenCL error: %d)\n", ret);
+    } else {
+        ret = VTL_img_save("output_rotate90.png", rotated);
+        if (ret < 0) printf("[ERROR] Failed to save rotated image\n");
+        else printf("[OK] Rotated image saved to output_rotate90.png\n");
+        av_frame_free(&rotated);
+    }
+
+    // --- Edge detect ---
+    AVFrame* edged = NULL;
+    ret = VTL_img_edge_detect(frame, &edged, width, height, pix_fmt);
+    if (ret < 0) {
+        printf("[ERROR] Edge detect failed (OpenCL error: %d)\n", ret);
+    } else {
+        ret = VTL_img_save("output_edge.png", edged);
+        if (ret < 0) printf("[ERROR] Failed to save edge image\n");
+        else printf("[OK] Edge image saved to output_edge.png\n");
+        av_frame_free(&edged);
+    }
+
     av_frame_free(&frame);
     av_frame_free(&blurred);
     return 0;
