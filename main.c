@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include "VTL/media_container/img/VTL_img_load.h"
+#include "VTL/media_container/img/infra/VTL_img_load.h"
 #include "VTL/media_container/img/VTL_img_blur.h"
-#include "VTL/media_container/img/VTL_img_save.h"
+#include "VTL/media_container/img/infra/VTL_img_save.h"
 #include <libavutil/pixfmt.h>
 
 int main(void) {

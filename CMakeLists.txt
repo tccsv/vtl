@@ -19,9 +19,9 @@ set(AppName ${CMAKE_PROJECT_NAME})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/app )
 
 set(VTL_CMAKE_MEDIA_CONTAINER_IMG_SRC_FILES
-    VTL/media_container/img/VTL_img_load.c
+    VTL/media_container/img/infra/VTL_img_load.c
     VTL/media_container/img/VTL_img_blur.c
-    VTL/media_container/img/VTL_img_save.c
+    VTL/media_container/img/infra/VTL_img_save.c
 )
 
 set(VTL_CMAKE_UTILS_SRC_FILES 
