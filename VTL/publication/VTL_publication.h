@@ -6,7 +6,7 @@ extern "C"
 {
 #endif
 
-#include <VTL/publication/text/VTL_publication_text.h>
+#include <VTL/publication/text/VTL_publication_Text.h>
 
 
 #ifdef __cplusplus
