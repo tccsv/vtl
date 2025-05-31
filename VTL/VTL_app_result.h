@@ -6,7 +6,7 @@ extern "C"
 {
 #endif
 
-typedef enum _VTL_publication_AppResult 
+typedef enum _VTL_AppResult 
 {
     VTL_publication_res_kOk = 0,
     VTL_publication_res_kMissingFileErr = 1,
@@ -16,7 +16,7 @@ typedef enum _VTL_publication_AppResult
     VTL_publication_res_kTextMarkupErr = 102,
     VTL_publication_res_kTextFormatErr = 103,
     
-} VTL_publication_AppResult;
+} VTL_AppResult;
 
 #ifdef __cplusplus
 }
