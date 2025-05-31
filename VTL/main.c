@@ -6,7 +6,7 @@
 
 int main(void)
 {
-    VTL_publication_app_result app_result = VTL_publication_res_kOk;
+    VTL_AppResult app_result = VTL_publication_res_kOk;
     VTL_console_log(VTL_LOG_LEVEL_INFO, "Начало конвертации разметки...");
 
     // Пример 1: Конвертация стандартного MD в Telegram MD
