@@ -20,7 +20,7 @@ typedef enum _VTL_publication_marked_text_MarkupType
 #define VTL_publication_text_TypeRegularShift (VTL_publication_marked_text_markup_type_max + 1)
 #define VTL_publication_text_TypeMax VTL_publication_text_type_regular_shift
 
-typedef int VTL_publication_marked_text_type_flags;
+typedef int VTL_publication_marked_text_TypeFlags;
 
 #define VTL_publication_text_TypeStandardMd (1 << VTL_publication_markup_type_kStandardMD)
 #define VTL_publication_text_TypeTelegramMd (1 << VTL_publication_markup_type_kTelegramMD)
