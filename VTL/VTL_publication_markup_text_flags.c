@@ -1,4 +1,4 @@
-#include <VTL/VTL_publication_markup_text_flags.h>
+#include <VTL/VTL_publication_markup_TextFlags.h>
 
 bool VTL_publication_MarkedTextTypeFlagCheckStandardMD(const VTL_publication_marked_text_type_flags flags) {
     return (flags & VTL_publication_text_type_standard_md) != 0;
