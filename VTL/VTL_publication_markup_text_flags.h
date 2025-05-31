@@ -22,17 +22,17 @@ typedef enum _VTL_publication_marked_text_MarkupType
 
 typedef int VTL_publication_marked_text_type_flags;
 
-#define VTL_publication_text_type_standard_md (1 << VTL_publication_markup_type_kStandardMD)
-#define VTL_publication_text_type_telegram_md (1 << VTL_publication_markup_type_kTelegramMD)
-#define VTL_publication_text_type_html (1 << VTL_publication_markup_type_kHTML)
-#define VTL_publication_text_type_bb (1 << VTL_publication_markup_type_kBB)
-#define VTL_publication_text_type_regular (1 << VTL_publication_text_type_regular_shift)
+#define VTL_publication_text_TypeStandardMd (1 << VTL_publication_markup_type_kStandardMD)
+#define VTL_publication_text_TypeTelegramMd (1 << VTL_publication_markup_type_kTelegramMD)
+#define VTL_publication_text_TypeHtml (1 << VTL_publication_markup_type_kHTML)
+#define VTL_publication_text_TypeBb (1 << VTL_publication_markup_type_kBB)
+#define VTL_publication_text_TypeRegular (1 << VTL_publication_text_type_regular_shift)
 
-bool VTL_publication_MarkedTextTypeFlagCheckStandardMD(const VTL_publication_marked_text_type_flags flags);
-bool VTL_publication_MarkedTextTypeFlagCheckTelegramMD(const VTL_publication_marked_text_type_flags flags);
-bool VTL_publication_MarkedTextTypeFlagCheckHTML(const VTL_publication_marked_text_type_flags flags);
-bool VTL_publication_MarkedTextTypeFlagCheckBB(const VTL_publication_marked_text_type_flags flags);
-bool VTL_publication_MarkedTextTypeFlagCheckRegularText(const VTL_publication_marked_text_type_flags flags);
+bool VTL_publication_MarkedTextTypeFlagCheckStandardMD(const VTL_publication_marked_text_TypeFlags flags);
+bool VTL_publication_MarkedTextTypeFlagCheckTelegramMD(const VTL_publication_marked_text_TypeFlags flags);
+bool VTL_publication_MarkedTextTypeFlagCheckHTML(const VTL_publication_marked_text_TypeFlags flags);
+bool VTL_publication_MarkedTextTypeFlagCheckBB(const VTL_publication_marked_text_TypeFlags flags);
+bool VTL_publication_MarkedTextTypeFlagCheckRegularText(const VTL_publication_marked_text_TypeFlags flags);
 
 #ifdef __cplusplus
 }
