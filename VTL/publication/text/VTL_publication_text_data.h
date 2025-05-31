@@ -7,7 +7,7 @@ extern "C"
 #endif
 
 
-#include <VTL/VTL_app_result.h> 
+#include <VTL/VTL_AppResult.h> 
 #include <stddef.h>
 
 
