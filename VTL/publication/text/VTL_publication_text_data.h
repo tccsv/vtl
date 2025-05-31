@@ -13,41 +13,41 @@ extern "C"
 
 typedef char VTL_publication_text_symbol;
 
-typedef struct _VTL_publication_text
+typedef struct _VTL_publication_Text
 {
     VTL_publication_text_symbol* text;
     size_t length;
-} VTL_publication_text;
+} VTL_publication_Text;
 
 
-typedef enum _VTL_publication_marked_text_modification_shift
+typedef enum _VTL_publication_marked_text_ModificationShift
 {
     VTL_publication_text_type_kBold = 0,
     VTL_publication_text_type_kItalic,
     VTL_publication_text_type_kStrikethrough
-} VTL_publication_marked_text_modification_shift;
+} VTL_publication_marked_text_ModificationShift;
 
-#define VTL_publication_text_modification_bold 1 << 0
-#define VTL_publication_text_modification_italic 1 << 1
-#define VTL_publication_text_modification_strikethrough 1 << 2
+#define VTL_publication_text_ModificationBold 1 << 0
+#define VTL_publication_text_ModificationItalic 1 << 1
+#define VTL_publication_text_ModificationStrikethrough 1 << 2
 
-typedef int VTL_publication_text_modification_flags;
+typedef int VTL_publication_text_ModificationFlags;
 
-typedef struct _VTL_publication_marked_text_part
+typedef struct _VTL_publication_MarkedTextPart
 {
     VTL_publication_text_symbol* text;
     size_t length;
     VTL_publication_text_modification_flags type;
-} VTL_publication_marked_text_part;
+} VTL_publication_MarkedTextPart;
 
 
-typedef struct _VTL_publication_marked_text_block
+typedef struct _VTL_publication_MarkedTextBlock
 {
     VTL_publication_marked_text_part* parts;
     size_t length;
-} VTL_publication_marked_text_block;
+} VTL_publication_MarkedTextBlock;
 
-typedef VTL_publication_marked_text_block VTL_publication_marked_text;
+typedef VTL_publication_marked_text_block VTL_publication_MarkedText;
 
 #define VTL_publication_text_default_length 100000
 #define VTL_publication_text_default_size (VTL_publication_text_default_length*sizeof(VTL_publication_text_symbol)+sizeof(size_t))
