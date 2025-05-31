@@ -2,7 +2,7 @@
 #include <VTL/publication/text/VTL_publication_text_data.h>
 #include <stdlib.h>
 
-VTL_AppResult VTL_publication_TextOpInit(VTL_publication_text* p_text) {
+VTL_AppResult VTL_publication_TextOpInit(VTL_publication_Text* p_text) {
     if (!p_text) {
         return VTL_publication_res_kError;
     }
@@ -16,7 +16,7 @@ VTL_AppResult VTL_publication_TextOpInit(VTL_publication_text* p_text) {
     return VTL_publication_res_kOk;
 }
 
-void VTL_publication_TextOpFree(VTL_publication_text* p_text) {
+void VTL_publication_TextOpFree(VTL_publication_Text* p_text) {
     if (p_text && p_text->text) {
         free(p_text->text);
         p_text->text = NULL;
