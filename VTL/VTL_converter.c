@@ -20,7 +20,7 @@ static void VTL_publication_FreeInternalContent(VTL_publication_InternalContent*
     }
 }
 
-static VTL_publication_app_result VTL_publication_ConvertStdMdToTgMdInternal(const char* std_md, size_t size, char** tg_md, size_t* tg_md_size) {
+static VTL_AppResult VTL_publication_ConvertStdMdToTgMdInternal(const char* std_md, size_t size, char** tg_md, size_t* tg_md_size) {
     if (!std_md || !tg_md || !tg_md_size) {
         return VTL_publication_res_kError;
     }
