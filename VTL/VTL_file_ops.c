@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-VTL_publication_file_result VTL_publication_FileReadS(const char* filename, char** content, size_t* size) {
+VTL_publication_FileResult VTL_publication_FileReadS(const char* filename, char** content, size_t* size) {
     if (!content || !size) {
         return VTL_publication_file_res_kErrorMemory;
     }
@@ -34,7 +34,7 @@ VTL_publication_file_result VTL_publication_FileReadS(const char* filename, char
     return VTL_publication_file_res_kOk;
 }
 
-VTL_publication_file_result VTL_publication_FileWriteS(const char* filename, const char* content, size_t size) {
+VTL_publication_FileResult VTL_publication_FileWriteS(const char* filename, const char* content, size_t size) {
     if (!content) {
         return VTL_publication_file_res_kErrorMemory;
     }
@@ -53,7 +53,7 @@ VTL_publication_file_result VTL_publication_FileWriteS(const char* filename, con
     return VTL_publication_file_res_kOk;
 }
 
-VTL_publication_file_result VTL_publication_FileAppendS(const char* filename, const char* content, size_t size) {
+VTL_publication_FileResult VTL_publication_FileAppendS(const char* filename, const char* content, size_t size) {
     if (!content) {
         return VTL_publication_file_res_kErrorMemory;
     }
