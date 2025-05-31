@@ -40,8 +40,8 @@ set(VTL_CMAKE_USER_SRC_FILES
     )
 
 set(VTL_CMAKE_PUBLICATION_TEXT_SRC_FILES 
-
     VTL/publication/text/VTL_publication_text_data.c
+    VTL/publication/text/bbcode/VTL_publication_text_op_bbcode.c
     VTL/publication/text/VTL_publication_text_op.c
     VTL/publication/text/VTL_publication_markup_text_flags_check.c
     VTL/publication/text/infra/VTL_publication_text_read.c

@@ -6,28 +6,22 @@ extern "C"
 {
 #endif
 
+    typedef enum _VTL_AppResult
+    {
+        VTL_res_kOk = 0,
 
+        VTL_res_video_fs_r_kMissingFileErr = 1,
+        VTL_res_video_fs_r_kFileIsBusyErr,
 
-typedef enum _VTL_AppResult 
-{
-    VTL_res_kOk = 0,
-    
-    
-    VTL_res_video_fs_r_kMissingFileErr = 1,
-    VTL_res_video_fs_r_kFileIsBusyErr,
+        VTL_res_video_fs_w_kFileIsBusyErr = 10,
 
-    VTL_res_video_fs_w_kFileIsBusyErr = 10,
+        VTL_res_text_io_r_kInvalidArgument = 20,
+        VTL_res_text_ms_w_kOutOfMemory = 30
 
-
-    
-} VTL_AppResult;
-
-
-
+    } VTL_AppResult;
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif
