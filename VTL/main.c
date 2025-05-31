@@ -1,7 +1,7 @@
-#include <VTL/VTL.h>
-#include <VTL/VTL_converter.h>
-#include <VTL/VTL_file_ops.h>
-#include <VTL/utils/log/VTL_console.h>
+#include "VTL/VTL.h"
+#include "VTL/VTL_converter.h"
+#include "VTL/VTL_file_ops.h"
+#include "VTL/utils/log/VTL_console.h"
 #include <stdio.h>
 
 int main(void)
@@ -18,7 +18,7 @@ int main(void)
     };
     
     VTL_console_log(VTL_LOG_LEVEL_INFO, "Конвертация стандартного MD в Telegram MD...");
-    app_result = VTL_publication_ConvertMarkupS(&config1);
+    app_result = VTL_publication_convert_markup_s(&config1);
     if (app_result != VTL_publication_res_kOk) {
         VTL_console_log_file_error("Конвертация", config1.input_file, app_result);
         return app_result;
@@ -34,7 +34,7 @@ int main(void)
     };
     
     VTL_console_log(VTL_LOG_LEVEL_INFO, "Конвертация стандартного MD в обычный текст...");
-    app_result = VTL_publication_ConvertMarkupS(&config2);
+    app_result = VTL_publication_convert_markup_s(&config2);
     if (app_result != VTL_publication_res_kOk) {
         VTL_console_log_file_error("Конвертация", config2.input_file, app_result);
         return app_result;
@@ -50,7 +50,7 @@ int main(void)
     };
     
     VTL_console_log(VTL_LOG_LEVEL_INFO, "Конвертация Telegram MD обратно в стандартный MD...");
-    app_result = VTL_publication_ConvertMarkupS(&config3);
+    app_result = VTL_publication_convert_markup_s(&config3);
     if (app_result != VTL_publication_res_kOk) {
         VTL_console_log_file_error("Конвертация", config3.input_file, app_result);
         return app_result;
