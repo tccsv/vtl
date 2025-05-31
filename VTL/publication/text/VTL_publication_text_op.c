@@ -2,7 +2,7 @@
 #include <VTL/publication/text/VTL_publication_text_data.h>
 #include <stdlib.h>
 
-VTL_publication_app_result VTL_publication_TextOpInit(VTL_publication_text* p_text) {
+VTL_AppResult VTL_publication_TextOpInit(VTL_publication_text* p_text) {
     if (!p_text) {
         return VTL_publication_res_kError;
     }
@@ -24,31 +24,31 @@ void VTL_publication_TextOpFree(VTL_publication_text* p_text) {
     }
 }
 
-static VTL_publication_app_result VTL_publication_TextInitFromStandartMD(VTL_publication_MarkedText** pp_publication, 
+static VTL_AppResult  VTL_publication_TextInitFromStandartMD(VTL_publication_MarkedText** pp_publication, 
                                                        const VTL_publication_Text* p_src_text)
 {
     return VTL_publication_res_kOk;
 }
 
-static VTL_publication_app_result VTL_publication_TextInitFromTelegramMD(VTL_publication_MarkedText** pp_publication, 
+static VTL_AppResult  VTL_publication_TextInitFromTelegramMD(VTL_publication_MarkedText** pp_publication, 
                                                         const VTL_publication_Text* p_src_text)
 {
     return VTL_publication_res_kOk;
 }
 
-static VTL_publication_app_result VTL_publication_TextInitFromHTML(VTL_publication_MarkedText** pp_publication, 
+static VTL_AppResult  VTL_publication_TextInitFromHTML(VTL_publication_MarkedText** pp_publication, 
                                                     const VTL_publication_Text* p_src_text)
 {
     return VTL_publication_res_kOk;
 }
 
-static VTL_publication_app_result VTL_publication_TextInitFromBB(VTL_publication_MarkedText** pp_publication, 
+static VTL_AppResult  VTL_publication_TextInitFromBB(VTL_publication_MarkedText** pp_publication, 
                                                 const VTL_publication_Text* p_src_text)
 {
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_MarkedTextInit(VTL_publication_MarkedText **pp_marked_text, 
+VTL_AppResult  VTL_publication_MarkedTextInit(VTL_publication_MarkedText **pp_marked_text, 
                                                 const VTL_publication_Text *p_src_text, 
                                                 const VTL_publication_marked_text_MarkupType src_markup_type)
 {
@@ -71,31 +71,31 @@ VTL_publication_app_result VTL_publication_MarkedTextInit(VTL_publication_Marked
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_MarkedTextTransformToRegularText(VTL_publication_Text** pp_out_marked_text,
+VTL_AppResult  VTL_publication_MarkedTextTransformToRegularText(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text)
 {
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_MarkedTextTransformToStandartMD(VTL_publication_Text** pp_out_marked_text,
+VTL_AppResult  VTL_publication_MarkedTextTransformToStandartMD(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text)
 {
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_MarkedTextTransformToTelegramMD(VTL_publication_Text** pp_out_marked_text,
+VTL_AppResult  VTL_publication_MarkedTextTransformToTelegramMD(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text)
 {
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_MarkedTextTransformToHTML(VTL_publication_Text** pp_out_marked_text,
+VTL_AppResult  VTL_publication_MarkedTextTransformToHTML(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text)
 {
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_MarkedTextTransformToBB(VTL_publication_Text** pp_out_marked_text,
+VTL_AppResult  VTL_publication_MarkedTextTransformToBB(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text)
 {
     return VTL_publication_res_kOk;
