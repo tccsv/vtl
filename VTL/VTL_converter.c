@@ -166,19 +166,19 @@ static VTL_publication_app_result VTL_publication_ConvertMdToPlainInternal(const
 
     size_t out_pos = 0;
     for (size_t i = 0; i < size; i++) {
-        // Пропускаем символы форматирования
         if (md[i] == '*' || md[i] == '_' || md[i] == '`' || md[i] == '#') {
-            continue;
+            // Пропускаем символы форматирования
         }
-        // Пропускаем URL в ссылках
-        if (md[i] == '(') {
+        else if (md[i] == '(') {
+            // Пропускаем URL в ссылках
             while (i < size && md[i] != ')') {
                 i++;
             }
-            continue;
         }
-        // Копируем остальные символы
-        (*plain)[out_pos++] = md[i];
+        else {
+            // Копируем остальные символы
+            (*plain)[out_pos++] = md[i];
+        }
     }
     (*plain)[out_pos] = '\0';
     *plain_size = out_pos;
