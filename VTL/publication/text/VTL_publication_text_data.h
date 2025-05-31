@@ -35,9 +35,9 @@ typedef int VTL_publication_text_ModificationFlags;
 
 typedef struct _VTL_publication_MarkedTextPart
 {
-    VTL_publication_text_symbol* text;
+    VTL_publication_TextSymbol* text;
     size_t length;
-    VTL_publication_text_modification_flags type;
+    VTL_publication_text_ModificationFlags type;
 } VTL_publication_MarkedTextPart;
 
 
@@ -53,9 +53,9 @@ typedef VTL_publication_marked_text_block VTL_publication_MarkedText;
 #define VTL_publication_text_default_size (VTL_publication_text_default_length*sizeof(VTL_publication_text_symbol)+sizeof(size_t))
 
 
-void VTL_publication_marked_text_modification_SetBold(VTL_publication_text_modification_flags* p_flags);
-void VTL_publication_marked_text_modification_SetItalic(VTL_publication_text_modification_flags* p_flags);
-void VTL_publication_marked_text_modification_SetStrikethrough(VTL_publication_text_modification_flags* p_flags);
+void VTL_publication_marked_text_modification_SetBold(VTL_publication_text_ModificationFlags* p_flags);
+void VTL_publication_marked_text_modification_SetItalic(VTL_publication_text_ModificationFlags* p_flags);
+void VTL_publication_marked_text_modification_SetStrikethrough(VTL_publication_text_ModificationFlags* p_flags);
 
 
 #ifdef __cplusplus
