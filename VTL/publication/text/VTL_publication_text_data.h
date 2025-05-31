@@ -11,7 +11,7 @@ extern "C"
 #include <stddef.h>
 
 
-typedef char VTL_publication_text_symbol;
+typedef char VTL_publication_TextSymbol;
 
 typedef struct _VTL_publication_Text
 {
