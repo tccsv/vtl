@@ -7,7 +7,7 @@ VTL_AppResult VTL_publication_TextOpInit(VTL_publication_text* p_text) {
         return VTL_publication_res_kError;
     }
 
-    p_text->text = (VTL_publication_text_symbol*)malloc(VTL_publication_text_default_size);
+    p_text->text = (VTL_publication_TextSymbol*)malloc(VTL_publication_text_default_size);
     if (!p_text->text) {
         return VTL_publication_res_kError;
     }
