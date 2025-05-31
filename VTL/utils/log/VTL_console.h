@@ -1,7 +1,7 @@
 #ifndef VTL_CONSOLE_H
 #define VTL_CONSOLE_H
 
-#include "VTL_app_result.h"
+#include <VTL_AppResult.h>
 #include <stdarg.h>
 
 // Уровни логирования
