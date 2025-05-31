@@ -15,7 +15,7 @@ typedef char VTL_publication_TextSymbol;
 
 typedef struct _VTL_publication_Text
 {
-    VTL_publication_text_symbol* text;
+    VTL_publication_TextSymbol* text;
     size_t length;
 } VTL_publication_Text;
 
