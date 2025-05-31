@@ -5,9 +5,9 @@
 extern "C" {
 #endif
 
-#include <VTL/VTL_app_result.h>
-#include <VTL/publication/text/VTL_publication_text_data.h>
-#include <VTL/VTL_publication_markup_text_flags.h>
+#include <VTL/VTL_AppResult.h>
+#include <VTL/publication/text/VTL_publication_TextData.h>
+#include <VTL/VTL_publication_markup_TextFlags.h>
 
 /**
 хедер для конвертера
@@ -22,10 +22,10 @@ typedef struct _VTL_publication_ConversionConfig {
 } VTL_publication_ConversionConfig;
 
 // функции конверсии
-VTL_publication_AppResult VTL_publication_ConvertMarkupS(const VTL_publication_ConversionConfig* config);
-VTL_publication_AppResult VTL_publication_StdMdToTgMdS(const char* std_md, size_t std_md_size, char** tg_md, size_t* tg_md_size);
-VTL_publication_AppResult VTL_publication_TgMdToStdMdS(const char* tg_md, size_t tg_md_size, char** std_md, size_t* std_md_size);
-VTL_publication_AppResult VTL_publication_MdToPlainS(const char* md, size_t md_size, char** plain, size_t* plain_size);
+VTL_AppResult VTL_publication_ConvertMarkupS(const VTL_publication_ConversionConfig* config);
+VTL_AppResult VTL_publication_StdMdToTgMdS(const char* std_md, size_t std_md_size, char** tg_md, size_t* tg_md_size);
+VTL_AppResult VTL_publication_TgMdToStdMdS(const char* tg_md, size_t tg_md_size, char** std_md, size_t* std_md_size);
+VTL_AppResult VTL_publication_MdToPlainS(const char* md, size_t md_size, char** plain, size_t* plain_size);
 
 #ifdef __cplusplus
 }
