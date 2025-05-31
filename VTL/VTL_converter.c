@@ -104,7 +104,7 @@ static VTL_AppResult VTL_publication_ConvertStdMdToTgMdInternal(const char* std_
     return VTL_publication_res_kOk;
 }
 
-static VTL_publication_app_result VTL_publication_ConvertTgMdToStdMdInternal(const char* tg_md, size_t size, char** std_md, size_t* std_md_size) {
+static VTL_AppResult VTL_publication_ConvertTgMdToStdMdInternal(const char* tg_md, size_t size, char** std_md, size_t* std_md_size) {
     if (!tg_md || !std_md || !std_md_size) {
         return VTL_publication_res_kError;
     }
@@ -153,7 +153,7 @@ static VTL_publication_app_result VTL_publication_ConvertTgMdToStdMdInternal(con
     return VTL_publication_res_kOk;
 }
 
-static VTL_publication_app_result VTL_publication_ConvertMdToPlainInternal(const char* md, size_t size, char** plain, size_t* plain_size) {
+static VTL_AppResult VTL_publication_ConvertMdToPlainInternal(const char* md, size_t size, char** plain, size_t* plain_size) {
     if (!md || !plain || !plain_size) {
         return VTL_publication_res_kError;
     }
@@ -192,7 +192,7 @@ static VTL_publication_app_result VTL_publication_ConvertMdToPlainInternal(const
     return VTL_publication_res_kOk;
 }
 
-VTL_publication_app_result VTL_publication_ConvertMarkupS(const VTL_publication_ConversionConfig* config) {
+VTL_AppResult VTL_publication_ConvertMarkupS(const VTL_publication_ConversionConfig* config) {
     if (!config || !config->input_file || !config->output_file) {
         return VTL_publication_res_kError;
     }
@@ -246,14 +246,14 @@ VTL_publication_app_result VTL_publication_ConvertMarkupS(const VTL_publication_
     return convert_result;
 }
 
-VTL_publication_app_result VTL_publication_StdMdToTgMdS(const char* std_md, size_t std_md_size, char** tg_md, size_t* tg_md_size) {
+VTL_AppResult VTL_publication_StdMdToTgMdS(const char* std_md, size_t std_md_size, char** tg_md, size_t* tg_md_size) {
     return VTL_publication_ConvertStdMdToTgMdInternal(std_md, std_md_size, tg_md, tg_md_size);
 }
 
-VTL_publication_app_result VTL_publication_TgMdToStdMdS(const char* tg_md, size_t tg_md_size, char** std_md, size_t* std_md_size) {
+VTL_AppResult VTL_publication_TgMdToStdMdS(const char* tg_md, size_t tg_md_size, char** std_md, size_t* std_md_size) {
     return VTL_publication_ConvertTgMdToStdMdInternal(tg_md, tg_md_size, std_md, std_md_size);
 }
 
-VTL_publication_app_result VTL_publication_MdToPlainS(const char* md, size_t md_size, char** plain, size_t* plain_size) {
+VTL_AppResult VTL_publication_MdToPlainS(const char* md, size_t md_size, char** plain, size_t* plain_size) {
     return VTL_publication_ConvertMdToPlainInternal(md, md_size, plain, plain_size);
 } 
