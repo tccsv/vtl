@@ -17,7 +17,7 @@ int main(void) {
     }
     printf("[INFO] Loaded image %s: %dx%d, format=%d\n", input_path, width, height, pix_fmt);
     AVFrame* blurred = NULL;
-    ret = VTL_img_blur(frame, &blurred, width, height, pix_fmt, NULL);
+    ret = VTL_img_Blur(frame, &blurred, width, height, pix_fmt, NULL);
     if (ret < 0) {
         printf("[ERROR] Blur failed (OpenCL error: %d)\n", ret);
         av_frame_free(&frame);
@@ -34,7 +34,7 @@ int main(void) {
 
     // --- Invert ---
     AVFrame* inverted = NULL;
-    ret = VTL_img_invert(frame, &inverted, width, height, pix_fmt);
+    ret = VTL_img_Invert(frame, &inverted, width, height, pix_fmt);
     if (ret < 0) {
         printf("[ERROR] Invert failed (OpenCL error: %d)\n", ret);
     } else {
@@ -46,7 +46,7 @@ int main(void) {
 
     // --- Rotate 90 ---
     AVFrame* rotated = NULL;
-    ret = VTL_img_rotate(frame, &rotated, width, height, pix_fmt, 90);
+    ret = VTL_img_Rotate(frame, &rotated, width, height, pix_fmt, 90);
     if (ret < 0) {
         printf("[ERROR] Rotate failed (OpenCL error: %d)\n", ret);
     } else {
@@ -58,7 +58,7 @@ int main(void) {
 
     // --- Edge detect ---
     AVFrame* edged = NULL;
-    ret = VTL_img_edge_detect(frame, &edged, width, height, pix_fmt);
+    ret = VTL_img_EdgeDetect(frame, &edged, width, height, pix_fmt);
     if (ret < 0) {
         printf("[ERROR] Edge detect failed (OpenCL error: %d)\n", ret);
     } else {

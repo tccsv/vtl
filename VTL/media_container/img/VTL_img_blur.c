@@ -88,7 +88,7 @@
     "    }\n" \
     "}\n"
 
-static int run_opencl_blur(const uint8_t* in, uint8_t* out, int width, int height) {
+static int VTL_img_RunOpenclBlur(const uint8_t* in, uint8_t* out, int width, int height) {
     cl_int err;
     cl_platform_id platform;
     cl_device_id device;
@@ -132,7 +132,7 @@ static int run_opencl_blur(const uint8_t* in, uint8_t* out, int width, int heigh
     return 0;
 }
 
-static int run_opencl_blur_rgb(const uint8_t* in, uint8_t* out, int width, int height) {
+static int VTL_img_RunOpenclBlurRGB(const uint8_t* in, uint8_t* out, int width, int height) {
     cl_int err;
     cl_platform_id platform;
     cl_device_id device;
@@ -176,7 +176,7 @@ static int run_opencl_blur_rgb(const uint8_t* in, uint8_t* out, int width, int h
     return 0;
 }
 
-static int run_opencl_rotate(const uint8_t* in, uint8_t* out, int in_w, int in_h, int channels, int angle, int out_w, int out_h) {
+static int VTL_img_RunOpenclRotate(const uint8_t* in, uint8_t* out, int in_w, int in_h, int channels, int angle, int out_w, int out_h) {
     cl_int err;
     cl_platform_id platform;
     cl_device_id device;
@@ -224,7 +224,7 @@ static int run_opencl_rotate(const uint8_t* in, uint8_t* out, int in_w, int in_h
     return 0;
 }
 
-static int run_opencl_invert(const uint8_t* in, uint8_t* out, int width, int height, int channels) {
+static int VTL_img_RunOpenclInvert(const uint8_t* in, uint8_t* out, int width, int height, int channels) {
     cl_int err;
     cl_platform_id platform;
     cl_device_id device;
@@ -269,7 +269,7 @@ static int run_opencl_invert(const uint8_t* in, uint8_t* out, int width, int hei
     return 0;
 }
 
-static int run_opencl_edge(const uint8_t* in, uint8_t* out, int width, int height, int channels) {
+static int VTL_img_RunOpenclEdge(const uint8_t* in, uint8_t* out, int width, int height, int channels) {
     cl_int err;
     cl_platform_id platform;
     cl_device_id device;
@@ -314,7 +314,7 @@ static int run_opencl_edge(const uint8_t* in, uint8_t* out, int width, int heigh
     return 0;
 }
 
-int VTL_img_blur(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt, const char* blur_params) {
+int VTL_img_Blur(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt, const char* blur_params) {
     if (pix_fmt == AV_PIX_FMT_GRAY8) {
         *out_frame = av_frame_alloc();
         av_frame_copy_props(*out_frame, in_frame);
@@ -322,7 +322,7 @@ int VTL_img_blur(AVFrame* in_frame, AVFrame** out_frame, int width, int height, 
         (*out_frame)->height = height;
         (*out_frame)->format = pix_fmt;
         av_frame_get_buffer(*out_frame, 32);
-        int ret = run_opencl_blur(in_frame->data[0], (*out_frame)->data[0], width, height);
+        int ret = VTL_img_RunOpenclBlur(in_frame->data[0], (*out_frame)->data[0], width, height);
         return ret;
     } else if (pix_fmt == AV_PIX_FMT_RGB24) {
         *out_frame = av_frame_alloc();
@@ -331,14 +331,14 @@ int VTL_img_blur(AVFrame* in_frame, AVFrame** out_frame, int width, int height, 
         (*out_frame)->height = height;
         (*out_frame)->format = pix_fmt;
         av_frame_get_buffer(*out_frame, 32);
-        int ret = run_opencl_blur_rgb(in_frame->data[0], (*out_frame)->data[0], width, height);
+        int ret = VTL_img_RunOpenclBlurRGB(in_frame->data[0], (*out_frame)->data[0], width, height);
         return ret;
     } else {
         return -100; // Unsupported format
     }
 }
 
-int VTL_img_rotate(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt, int angle) {
+int VTL_img_Rotate(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt, int angle) {
     int channels = (pix_fmt == AV_PIX_FMT_RGB24) ? 3 : 1;
     int out_w = width, out_h = height;
     if (angle == 90 || angle == 270) {
@@ -356,14 +356,14 @@ int VTL_img_rotate(AVFrame* in_frame, AVFrame** out_frame, int width, int height
     uint8_t* inbuf = malloc(img_size);
     uint8_t* outbuf = malloc(out_img_size);
     memcpy(inbuf, in_frame->data[0], img_size);
-    int ret = run_opencl_rotate(inbuf, outbuf, width, height, channels, angle, out_w, out_h);
+    int ret = VTL_img_RunOpenclRotate(inbuf, outbuf, width, height, channels, angle, out_w, out_h);
     memcpy((*out_frame)->data[0], outbuf, out_img_size);
     free(inbuf);
     free(outbuf);
     return ret;
 }
 
-int VTL_img_invert(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt) {
+int VTL_img_Invert(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt) {
     int channels = (pix_fmt == AV_PIX_FMT_RGB24) ? 3 : 1;
     *out_frame = av_frame_alloc();
     av_frame_copy_props(*out_frame, in_frame);
@@ -375,14 +375,14 @@ int VTL_img_invert(AVFrame* in_frame, AVFrame** out_frame, int width, int height
     uint8_t* inbuf = malloc(img_size);
     uint8_t* outbuf = malloc(img_size);
     memcpy(inbuf, in_frame->data[0], img_size);
-    int ret = run_opencl_invert(inbuf, outbuf, width, height, channels);
+    int ret = VTL_img_RunOpenclInvert(inbuf, outbuf, width, height, channels);
     memcpy((*out_frame)->data[0], outbuf, img_size);
     free(inbuf);
     free(outbuf);
     return ret;
 }
 
-int VTL_img_edge_detect(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt) {
+int VTL_img_EdgeDetect(AVFrame* in_frame, AVFrame** out_frame, int width, int height, enum AVPixelFormat pix_fmt) {
     int channels = (pix_fmt == AV_PIX_FMT_RGB24) ? 3 : 1;
     *out_frame = av_frame_alloc();
     av_frame_copy_props(*out_frame, in_frame);
@@ -394,7 +394,7 @@ int VTL_img_edge_detect(AVFrame* in_frame, AVFrame** out_frame, int width, int h
     uint8_t* inbuf = malloc(img_size);
     uint8_t* outbuf = malloc(img_size);
     memcpy(inbuf, in_frame->data[0], img_size);
-    int ret = run_opencl_edge(inbuf, outbuf, width, height, channels);
+    int ret = VTL_img_RunOpenclEdge(inbuf, outbuf, width, height, channels);
     memcpy((*out_frame)->data[0], outbuf, img_size);
     free(inbuf);
     free(outbuf);
