@@ -43,7 +43,7 @@ typedef struct _VTL_publication_MarkedTextPart
 
 typedef struct _VTL_publication_MarkedTextBlock
 {
-    VTL_publication_marked_text_part* parts;
+    VTL_publication_marked_TextPart* parts;
     size_t length;
 } VTL_publication_MarkedTextBlock;
 
