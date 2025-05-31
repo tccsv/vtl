@@ -73,17 +73,17 @@ set(VTL_CMAKE_MEDIA_CONTAINER_VIDEO_SRC_FILES
     VTL/media_container/video/VTL_video_data.c
     )
 
-set(VTL_CMAKE_MEDIA_CONTAINER_IMG_SRC_FILES 
-    VTL/media_container/img/VTL_img_core.c
-    VTL/media_container/img/VTL_img_filters.c
-    VTL/media_container/img/VTL_img_utils.c
-)
+# set(VTL_CMAKE_MEDIA_CONTAINER_IMG_SRC_FILES 
+#     VTL/media_container/img/VTL_img_core.c
+#     VTL/media_container/img/VTL_img_filters.c
+#     VTL/media_container/img/VTL_img_utils.c
+# )
 
 set(VTL_CMAKE_MEDIA_CONTAINER_SRC_FILES
 
     ${VTL_CMAKE_MEDIA_CONTAINER_AUDIO_SRC_FILES}
     ${VTL_CMAKE_MEDIA_CONTAINER_VIDEO_SRC_FILES}
-    ${VTL_CMAKE_MEDIA_CONTAINER_IMG_SRC_FILES}
+    # ${VTL_CMAKE_MEDIA_CONTAINER_IMG_SRC_FILES}
 
     )
 
@@ -105,7 +105,7 @@ set(VTL_CMAKE_CONTENT_PLATFORM_SRC_FILES
     VTL/content_platform/VTL_content_platform_publication.c
     )
 
-add_subdirectory(VTL/media_container/img)
+# add_subdirectory(VTL/media_container/img)
 
 add_executable(${AppName}
     ${VTL_CMAKE_UTILS_SRC_FILES}
@@ -118,7 +118,7 @@ add_executable(${AppName}
 # Link FFmpeg
 target_link_libraries(${AppName} PRIVATE 
     ffmpeg 
-    VTL_img 
+    # VTL_img 
     m           # математическая библиотека
     va          # VAAPI
     va-drm      # VAAPI DRM
