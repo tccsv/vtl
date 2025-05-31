@@ -115,35 +115,39 @@ add_executable(${AppName}
     ${VTL_CMAKE_CONTENT_PLATFORM_SRC_FILES}
     main.c)
 
-# Link FFmpeg
-target_link_libraries(${AppName} PRIVATE 
-    ffmpeg 
-    VTL_img 
-    m           # математическая библиотека
-    va          # VAAPI
-    va-drm      # VAAPI DRM
-    va-x11      # VAAPI X11
-    drm         # Direct Rendering Manager
-    X11         # X11
-    vdpau       # VDPAU
-    z           # zlib
-    bz2         # bzip2
-    lzma        # xz/lzma
-    lz4         # lz4
-    zstd        # zstd
-    x264        # H.264
-    x265        # H.265
-    vpx         # VP8/VP9
-    aom         # AV1
-    opus        # Opus audio
-    vorbis      # Vorbis audio
-    ogg         # Ogg container
-    swresample  # FFmpeg resampling
-    swscale     # FFmpeg scaling
-)
+if(APPLE)
+    target_link_libraries(${AppName} PRIVATE
+        ffmpeg
+        VTL_img
+        "-framework Metal"
+        "-framework VideoToolbox"
+        "-framework CoreImage"
+        "-framework AppKit"
+        "-framework CoreFoundation"
+        "-framework CoreMedia"
+        "-framework CoreVideo"
+        "-framework CoreServices"
+        "-framework Security"
+        "-framework AudioToolbox"
+        z
+        iconv
+    )
+elseif(UNIX)
+    target_link_libraries(${AppName} PRIVATE
+        ffmpeg
+        VTL_img
+        z
+        bz2
+        lzma
+        zstd
+        m
+        pthread
+        iconv
+    )
+endif()
 
-target_include_directories(${AppName} 
-    PRIVATE 
+target_include_directories(${AppName}
+    PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/VTL
     ${CMAKE_SOURCE_DIR}/VTL/user
@@ -153,5 +157,4 @@ target_include_directories(${AppName}
 )
 
 enable_testing()
-
 add_subdirectory(vtl_tests)
