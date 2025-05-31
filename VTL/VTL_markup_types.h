@@ -9,6 +9,6 @@ typedef enum {
     VTL_publication_markup_type_kTelegramMD,
     VTL_publication_markup_type_kPlainText,
     VTL_publication_markup_type_kInternal
-} VTL_publication_markup_type;
+} VTL_publication_MarkupType;
 
 #endif // _VTL_MARKUP_TYPES_H 
