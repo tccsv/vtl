@@ -18,11 +18,11 @@ extern "C"
 typedef VTL_publication_string VTL_Filename;
 typedef FILE VTL_File;
 
-VTL_publication_app_result VTL_publication_FileOpenForReading(VTL_File** pp_file, VTL_Filename file_name);
-VTL_publication_app_result VTL_publication_FileOpenForWriting(VTL_File** pp_file, VTL_Filename file_name);
-VTL_publication_app_result VTL_publication_FileReadRawData(VTL_BufferData** buffer_data, const VTL_Filename file_name);
-VTL_publication_app_result VTL_publication_FileWriteRawData(VTL_BufferData** buffer_data, const VTL_Filename file_name);
-VTL_publication_app_result VTL_publication_FileCopy(const VTL_Filename out_file_name, const VTL_Filename src_file_name);
+VTL_AppResult VTL_publication_FileOpenForReading(VTL_File** pp_file, VTL_Filename file_name);
+VTL_AppResult VTL_publication_FileOpenForWriting(VTL_File** pp_file, VTL_Filename file_name);
+VTL_AppResult VTL_publication_FileReadRawData(VTL_BufferData** buffer_data, const VTL_Filename file_name);
+VTL_AppResult VTL_publication_FileWriteRawData(VTL_BufferData** buffer_data, const VTL_Filename file_name);
+VTL_AppResult VTL_publication_FileCopy(const VTL_Filename out_file_name, const VTL_Filename src_file_name);
 bool VTL_publication_FileCheckEquality(const VTL_Filename first_file_name, const VTL_Filename second_file_name);
 
 #ifdef __cplusplus
