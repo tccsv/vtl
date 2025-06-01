@@ -16,7 +16,8 @@ typedef enum _VTL_publication_marked_text_MarkupType
     VTL_markup_type_kStandartMD = 0,
     VTL_markup_type_kTelegramMD,
     VTL_markup_type_kHTML,
-    VTL_markup_type_kBB
+    VTL_markup_type_kBB,
+    VTL_markup_type_kRegular
 } VTL_publication_marked_text_MarkupType;
 
 #define VTL_PUBLICATION_MARKED_TEXT_MARKUP_TYPE_MAX VTL_markup_type_kBB
