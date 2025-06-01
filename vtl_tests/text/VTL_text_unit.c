@@ -3,6 +3,7 @@
 #include <VTL/publication/text/VTL_publication_text_op.h>
 #include <VTL/publication/text/infra/VTL_publication_text_read.h>
 #include <VTL/publication/text/infra/VTL_publication_text_write.h>
+#include <vtl_tests/VTL_test_data.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,14 +33,14 @@ static int VTL_test_HtmlToMarkedTextSimple() {
     VTL_AppResult result = VTL_publication_text_InitFromHTML(&marked_text, &html_text);
     
     // Проверяем результат
-    if (result != VTL_res_kOk) {
-        printf("Ошибка преобразования HTML в размеченный текст: %d\n", result);
+    const char* test_fail_message = "\nОшибка преобразования HTML в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
         return 0;
     }
     
     // Проверяем, что размеченный текст создан
-    if (!marked_text || !marked_text->parts) {
-        printf("Ошибка: размеченный текст не создан\n");
+    test_fail_message = "\nОшибка: размеченный текст не создан\n";
+    if (!VTL_test_CheckCondition(marked_text && marked_text->parts, test_fail_message)) {
         return 0;
     }
     
@@ -62,8 +63,8 @@ static int VTL_test_HtmlToMarkedTextSimple() {
         }
     }
     
-    if (!has_bold_part) {
-        printf("Ошибка: не найдена жирная часть текста\n");
+    test_fail_message = "\nОшибка: не найдена жирная часть текста\n";
+    if (!VTL_test_CheckCondition(has_bold_part, test_fail_message)) {
         VTL_publication_marked_text_Free(marked_text);
         return 0;
     }
@@ -102,8 +103,8 @@ static int VTL_test_MarkedTextToHtml() {
     VTL_AppResult result = VTL_publication_marked_text_TransformToHTML(&html_text, &marked_text);
     
     // Проверяем результат
-    if (result != VTL_res_kOk) {
-        printf("Ошибка преобразования размеченного текста в HTML: %d\n", result);
+    const char* test_fail_message = "\nОшибка преобразования размеченного текста в HTML\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
         // Освобождаем память вручную, так как не можем использовать Free для стековой переменной
         for (size_t i = 0; i < marked_text.length; i++) {
             free(marked_text.parts[i].text);
@@ -116,12 +117,15 @@ static int VTL_test_MarkedTextToHtml() {
     printf("Полученный HTML: '%s'\n", html_text->text);
     
     // Проверяем, что HTML содержит нужные теги и части текста
-    if (strstr(html_text->text, "<b>") == NULL || 
-        strstr(html_text->text, "</b>") == NULL ||
-        strstr(html_text->text, "This is") == NULL ||
-        strstr(html_text->text, "bold") == NULL ||
-        strstr(html_text->text, "text") == NULL) {
-        printf("Ошибка: HTML не содержит необходимых элементов\n");
+    test_fail_message = "\nОшибка: HTML не содержит необходимых элементов\n";
+    if (!VTL_test_CheckCondition(
+        strstr(html_text->text, "<b>") != NULL && 
+        strstr(html_text->text, "</b>") != NULL &&
+        strstr(html_text->text, "This is") != NULL &&
+        strstr(html_text->text, "bold") != NULL &&
+        strstr(html_text->text, "text") != NULL, 
+        test_fail_message)) {
+        
         VTL_publication_text_Free(html_text);
         for (size_t i = 0; i < marked_text.length; i++) {
             free(marked_text.parts[i].text);
@@ -172,8 +176,8 @@ static int VTL_test_MarkedTextToRegularText() {
     VTL_AppResult result = VTL_publication_marked_text_TransformToRegularText(&regular_text, &marked_text);
     
     // Проверяем результат
-    if (result != VTL_res_kOk) {
-        printf("Ошибка преобразования размеченного текста в обычный текст: %d\n", result);
+    const char* test_fail_message = "\nОшибка преобразования размеченного текста в обычный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
         // Освобождаем память вручную
         for (size_t i = 0; i < marked_text.length; i++) {
             free(marked_text.parts[i].text);
@@ -186,10 +190,13 @@ static int VTL_test_MarkedTextToRegularText() {
     printf("Полученный текст: '%s'\n", regular_text->text);
     
     // Проверяем, что текст содержит все нужные части
-    if (strstr(regular_text->text, "This is") == NULL ||
-        strstr(regular_text->text, "bold") == NULL ||
-        strstr(regular_text->text, "text") == NULL) {
-        printf("Ошибка: текст не содержит необходимых элементов\n");
+    test_fail_message = "\nОшибка: текст не содержит необходимых элементов\n";
+    if (!VTL_test_CheckCondition(
+        strstr(regular_text->text, "This is") != NULL &&
+        strstr(regular_text->text, "bold") != NULL &&
+        strstr(regular_text->text, "text") != NULL,
+        test_fail_message)) {
+        
         VTL_publication_text_Free(regular_text);
         for (size_t i = 0; i < marked_text.length; i++) {
             free(marked_text.parts[i].text);
@@ -226,8 +233,8 @@ static int VTL_test_HtmlTagsProcessing() {
     VTL_AppResult result = VTL_publication_text_InitFromHTML(&marked_text, &html_text);
     
     // Проверяем результат
-    if (result != VTL_res_kOk) {
-        printf("Ошибка преобразования HTML в размеченный текст: %d\n", result);
+    const char* test_fail_message = "\nОшибка преобразования HTML в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
         return 0;
     }
     
@@ -235,51 +242,243 @@ static int VTL_test_HtmlTagsProcessing() {
     VTL_publication_Text* html_result = NULL;
     result = VTL_publication_marked_text_TransformToHTML(&html_result, marked_text);
     
-    if (result != VTL_res_kOk) {
-        printf("Ошибка преобразования размеченного текста в HTML: %d\n", result);
+    test_fail_message = "\nОшибка преобразования размеченного текста в HTML\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
         VTL_publication_marked_text_Free(marked_text);
         return 0;
     }
     
     // Ожидаемый HTML может немного отличаться, но должен содержать основные теги
-    int success = 1;
-    if (strstr(html_result->text, "<b>") == NULL || 
-        strstr(html_result->text, "</b>") == NULL ||
-        strstr(html_result->text, "<i>") == NULL || 
-        strstr(html_result->text, "</i>") == NULL ||
-        strstr(html_result->text, "<s>") == NULL || 
-        strstr(html_result->text, "</s>") == NULL) {
-        printf("Ошибка: не все теги присутствуют в результате\n");
-        success = 0;
+    test_fail_message = "\nОшибка: не все теги присутствуют в результате\n";
+    if (!VTL_test_CheckCondition(
+        strstr(html_result->text, "<b>") != NULL && 
+        strstr(html_result->text, "</b>") != NULL &&
+        strstr(html_result->text, "<i>") != NULL && 
+        strstr(html_result->text, "</i>") != NULL &&
+        strstr(html_result->text, "<s>") != NULL && 
+        strstr(html_result->text, "</s>") != NULL,
+        test_fail_message)) {
+        
+        VTL_publication_marked_text_Free(marked_text);
+        VTL_publication_text_Free(html_result);
+        return 0;
     }
     
     // Освобождаем память
     VTL_publication_marked_text_Free(marked_text);
     VTL_publication_text_Free(html_result);
     
-    if (success) {
-        printf("Тест 4 пройден успешно\n");
-        return 1;
-    } else {
+    printf("Тест 4 пройден успешно\n");
+    return 1;
+}
+
+// Тест 5: Обработка вложенных HTML тегов
+static int VTL_test_NestedHtmlTags() {
+    printf("Тест 5: Обработка вложенных HTML тегов\n");
+    
+    // Создаем HTML с вложенными тегами
+    const char* html_str = "<p>Это <b>жирный <i>и курсивный</i></b> текст</p>";
+    VTL_publication_Text html_text;
+    html_text.text = (VTL_publication_text_Symbol*)html_str;
+    html_text.length = strlen(html_str);
+    
+    // Преобразуем в размеченный текст
+    VTL_publication_MarkedText* marked_text = NULL;
+    VTL_AppResult result = VTL_publication_text_InitFromHTML(&marked_text, &html_text);
+    
+    // Проверяем результат
+    const char* test_fail_message = "\nОшибка преобразования HTML с вложенными тегами в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
         return 0;
     }
+    
+    // Проверяем, что есть часть, которая одновременно жирная и курсивная
+    int has_bold_and_italic_part = 0;
+    for (size_t i = 0; i < marked_text->length; i++) {
+        if ((marked_text->parts[i].type & VTL_TEXT_MODIFICATION_BOLD) && 
+            (marked_text->parts[i].type & VTL_TEXT_MODIFICATION_ITALIC)) {
+            has_bold_and_italic_part = 1;
+            break;
+        }
+    }
+    
+    test_fail_message = "\nОшибка: не найдена часть текста, которая одновременно жирная и курсивная\n";
+    if (!VTL_test_CheckCondition(has_bold_and_italic_part, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    VTL_publication_marked_text_Free(marked_text);
+    printf("Тест 5 пройден успешно\n");
+    return 1;
+}
+
+// Тест 6: Обработка HTML с переносами строк
+static int VTL_test_HtmlWithLineBreaks() {
+    printf("Тест 6: Обработка HTML с переносами строк\n");
+    
+    // Создаем HTML с переносами строк
+    const char* html_str = "<p>Строка 1<br>Строка 2</p>";
+    VTL_publication_Text html_text;
+    html_text.text = (VTL_publication_text_Symbol*)html_str;
+    html_text.length = strlen(html_str);
+    
+    // Преобразуем в размеченный текст
+    VTL_publication_MarkedText* marked_text = NULL;
+    VTL_AppResult result = VTL_publication_text_InitFromHTML(&marked_text, &html_text);
+    
+    // Проверяем результат
+    const char* test_fail_message = "\nОшибка преобразования HTML с переносами строк в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        return 0;
+    }
+    
+    // Преобразуем в обычный текст для проверки переносов строк
+    VTL_publication_Text* regular_text = NULL;
+    result = VTL_publication_marked_text_TransformToRegularText(&regular_text, marked_text);
+    
+    test_fail_message = "\nОшибка преобразования размеченного текста с переносами строк в обычный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    // Проверяем, что текст содержит перенос строки
+    test_fail_message = "\nОшибка: текст не содержит переноса строки\n";
+    if (!VTL_test_CheckCondition(strchr(regular_text->text, '\n') != NULL, test_fail_message)) {
+        VTL_publication_text_Free(regular_text);
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    // Освобождаем память
+    VTL_publication_text_Free(regular_text);
+    VTL_publication_marked_text_Free(marked_text);
+    
+    printf("Тест 6 пройден успешно\n");
+    return 1;
+}
+
+// Тест 7: Обработка пустого HTML
+static int VTL_test_EmptyHtml() {
+    printf("Тест 7: Обработка пустого HTML\n");
+    
+    // Создаем пустой HTML
+    const char* html_str = "";
+    VTL_publication_Text html_text;
+    html_text.text = (VTL_publication_text_Symbol*)html_str;
+    html_text.length = 0;
+    
+    // Преобразуем в размеченный текст
+    VTL_publication_MarkedText* marked_text = NULL;
+    VTL_AppResult result = VTL_publication_text_InitFromHTML(&marked_text, &html_text);
+    
+    // Проверяем результат
+    const char* test_fail_message = "\nОшибка преобразования пустого HTML в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        return 0;
+    }
+    
+    // Проверяем, что результат пуст или содержит 0 частей
+    test_fail_message = "\nОшибка: размеченный текст должен быть пустым\n";
+    if (!VTL_test_CheckCondition(marked_text->length == 0, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    VTL_publication_marked_text_Free(marked_text);
+    printf("Тест 7 пройден успешно\n");
+    return 1;
+}
+
+// Тест 8: Обработка HTML с различными типами тегов <strong>, <em>, <del>
+static int VTL_test_HtmlWithVariousTags() {
+    printf("Тест 8: Обработка HTML с различными типами тегов\n");
+    
+    // Создаем HTML с различными типами тегов
+    const char* html_str = "<p><strong>Жирный</strong> <em>курсивный</em> <del>зачеркнутый</del></p>";
+    VTL_publication_Text html_text;
+    html_text.text = (VTL_publication_text_Symbol*)html_str;
+    html_text.length = strlen(html_str);
+    
+    // Преобразуем в размеченный текст
+    VTL_publication_MarkedText* marked_text = NULL;
+    VTL_AppResult result = VTL_publication_text_InitFromHTML(&marked_text, &html_text);
+    
+    // Проверяем результат
+    const char* test_fail_message = "\nОшибка преобразования HTML с различными типами тегов в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        return 0;
+    }
+    
+    // Проверяем, что есть хотя бы одна жирная часть
+    int has_bold_part = 0;
+    // Проверяем, что есть хотя бы одна курсивная часть
+    int has_italic_part = 0;
+    // Проверяем, что есть хотя бы одна зачеркнутая часть
+    int has_strike_part = 0;
+    
+    for (size_t i = 0; i < marked_text->length; i++) {
+        if (marked_text->parts[i].type & VTL_TEXT_MODIFICATION_BOLD) {
+            has_bold_part = 1;
+        }
+        if (marked_text->parts[i].type & VTL_TEXT_MODIFICATION_ITALIC) {
+            has_italic_part = 1;
+        }
+        if (marked_text->parts[i].type & VTL_TEXT_MODIFICATION_STRIKETHROUGH) {
+            has_strike_part = 1;
+        }
+    }
+    
+    // Проверяем наличие всех типов форматирования
+    test_fail_message = "\nОшибка: не найдена жирная часть текста\n";
+    if (!VTL_test_CheckCondition(has_bold_part, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    test_fail_message = "\nОшибка: не найдена курсивная часть текста\n";
+    if (!VTL_test_CheckCondition(has_italic_part, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    test_fail_message = "\nОшибка: не найдена зачеркнутая часть текста\n";
+    if (!VTL_test_CheckCondition(has_strike_part, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        return 0;
+    }
+    
+    VTL_publication_marked_text_Free(marked_text);
+    printf("Тест 8 пройден успешно\n");
+    return 1;
 }
 
 // Главная функция с запуском тестов
-int main() {
-    int success = 1;
+int main(void)
+{
+    // Запускаем все тесты и считаем количество ошибок
+    int fail_count = 0;
     
-    // Запускаем все тесты
-    success &= VTL_test_HtmlToMarkedTextSimple();
-    success &= VTL_test_MarkedTextToHtml();
-    success &= VTL_test_MarkedTextToRegularText();
-    success &= VTL_test_HtmlTagsProcessing();
+    // Для каждого теста увеличиваем счетчик, если тест не пройден
+    if (!VTL_test_HtmlToMarkedTextSimple()) fail_count++;
+    if (!VTL_test_MarkedTextToHtml()) fail_count++;
+    if (!VTL_test_MarkedTextToRegularText()) fail_count++;
+    if (!VTL_test_HtmlTagsProcessing()) fail_count++;
     
-    if (success) {
+    // Новые тесты
+    if (!VTL_test_NestedHtmlTags()) fail_count++;
+    if (!VTL_test_HtmlWithLineBreaks()) fail_count++;
+    if (!VTL_test_EmptyHtml()) fail_count++;
+    if (!VTL_test_HtmlWithVariousTags()) fail_count++;
+    
+    // Выводим общий результат
+    if (fail_count == 0) {
         printf("Все тесты пройдены успешно!\n");
-        return 0;
     } else {
-        printf("Некоторые тесты не пройдены!\n");
-        return 1;
+        printf("Не пройдено тестов: %d\n", fail_count);
     }
+    
+    // Возвращаем число ошибок
+    return fail_count;
 } 

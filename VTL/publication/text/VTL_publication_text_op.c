@@ -75,13 +75,12 @@ static VTL_AppResult VTL_publication_text_InitFromTelegramMD(VTL_publication_Mar
     return VTL_res_kOk;
 }
 
-VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_publication, 
-                                                    const VTL_publication_Text* p_src_text)
-{
-    if (!pp_publication || !p_src_text || !p_src_text->text) {
-        return VTL_res_kInvalidParamErr;
-    }
-    
+static int VTL_publication_html_TagNameCompare(const VTL_publication_text_Symbol* text, size_t tag_name_start, 
+                                              size_t tag_len, const char* tag_name) {
+    return VTL_publication_text_StringCompareInsensitive(&text[tag_name_start], tag_name, tag_len);
+}
+
+static VTL_AppResult VTL_publication_html_InitMarkedTextStruct(VTL_publication_MarkedText** pp_publication) {
     // Выделяем память для размеченного текста
     *pp_publication = (VTL_publication_MarkedText*)malloc(sizeof(VTL_publication_MarkedText));
     if (!*pp_publication) {
@@ -97,6 +96,93 @@ VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_
     }
     (*pp_publication)->length = 0;
     
+    return VTL_res_kOk;
+}
+
+
+static void VTL_publication_html_ProcessTag(const VTL_publication_text_Symbol* text, 
+                                          size_t tag_name_start, size_t tag_len, int is_closing,
+                                          int* in_bold, int* in_italic, int* in_strike,
+                                          VTL_publication_text_Symbol* buffer, size_t* buffer_pos) {
+    
+    if (tag_len == 1 && (text[tag_name_start] == 'b' || text[tag_name_start] == 'B')) {
+        // Тег <b> или </b>
+        *in_bold = !is_closing;
+    } else if (tag_len == 6 && VTL_publication_html_TagNameCompare(text, tag_name_start, tag_len, "strong") == 0) {
+        // Тег <strong> или </strong>
+        *in_bold = !is_closing;
+    } else if (tag_len == 1 && (text[tag_name_start] == 'i' || text[tag_name_start] == 'I')) {
+        // Тег <i> или </i>
+        *in_italic = !is_closing;
+    } else if (tag_len == 2 && VTL_publication_html_TagNameCompare(text, tag_name_start, tag_len, "em") == 0) {
+        // Тег <em> или </em>
+        *in_italic = !is_closing;
+    } else if (tag_len == 1 && (text[tag_name_start] == 's' || text[tag_name_start] == 'S')) {
+        // Тег <s> или </s>
+        *in_strike = !is_closing;
+    } else if (tag_len == 3 && VTL_publication_html_TagNameCompare(text, tag_name_start, tag_len, "del") == 0) {
+        // Тег <del> или </del>
+        *in_strike = !is_closing;
+    } else if (tag_len == 6 && VTL_publication_html_TagNameCompare(text, tag_name_start, tag_len, "strike") == 0) {
+        // Тег <strike> или </strike>
+        *in_strike = !is_closing;
+    } else if (tag_len == 2 && VTL_publication_html_TagNameCompare(text, tag_name_start, tag_len, "br") == 0) {
+        // Тег <br> - добавляем перенос строки в буфер
+        buffer[*buffer_pos] = '\n';
+        (*buffer_pos)++;
+    } else if (tag_len == 1 && (text[tag_name_start] == 'p' || text[tag_name_start] == 'P')) {
+        // Теги <p> и </p> - добавляем перенос строки
+        if (is_closing) {
+            buffer[*buffer_pos] = '\n';
+            (*buffer_pos)++;
+            buffer[*buffer_pos] = '\n';
+            (*buffer_pos)++;
+        }
+    }
+}
+
+static VTL_AppResult VTL_publication_html_AddTextPart(VTL_publication_MarkedText** pp_publication, 
+                                                    VTL_publication_text_Symbol* buffer, size_t buffer_pos,
+                                                    size_t* capacity, int in_bold, int in_italic, int in_strike) {
+    
+    if (buffer_pos > 0) {
+        // Проверяем, нужно ли увеличить емкость
+        if ((*pp_publication)->length >= *capacity) {
+            *capacity *= 2;
+            VTL_publication_marked_text_Part* new_parts = (VTL_publication_marked_text_Part*)realloc(
+                (*pp_publication)->parts, *capacity * sizeof(VTL_publication_marked_text_Part));
+            if (!new_parts) {
+                return VTL_res_kMemAllocErr;
+            }
+            (*pp_publication)->parts = new_parts;
+        }
+        
+        // Создаем новую часть
+        VTL_publication_marked_text_Part* part = &(*pp_publication)->parts[(*pp_publication)->length++];
+        
+        // Выделяем память для текста части и добавляем завершающий нуль
+        part->text = (VTL_publication_text_Symbol*)malloc((buffer_pos + 1) * sizeof(VTL_publication_text_Symbol));
+        if (!part->text) {
+            return VTL_res_kMemAllocErr;
+        }
+        
+        // Копируем текст
+        memcpy(part->text, buffer, buffer_pos * sizeof(VTL_publication_text_Symbol));
+        part->text[buffer_pos] = '\0';
+        part->length = buffer_pos;
+        
+        // Устанавливаем тип форматирования
+        part->type = 0;
+        if (in_bold) VTL_publication_marked_text_modification_SetBold(&part->type);
+        if (in_italic) VTL_publication_marked_text_modification_SetItalic(&part->type);
+        if (in_strike) VTL_publication_marked_text_modification_SetStrikethrough(&part->type);
+    }
+    
+    return VTL_res_kOk;
+}
+
+static VTL_AppResult VTL_publication_html_ParseText(VTL_publication_MarkedText** pp_publication,
+                                                  const VTL_publication_Text* p_src_text) {
     const VTL_publication_text_Symbol* text = p_src_text->text;
     size_t text_len = p_src_text->length;
     size_t pos = 0;
@@ -115,55 +201,7 @@ VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_
     }
     
     size_t buffer_pos = 0;
-    
-    // Функция для добавления части текста в размеченный текст
-    void VTL_publication_text_AddTextPart() {
-        if (buffer_pos > 0) {
-            // Проверяем, нужно ли увеличить емкость
-            if ((*pp_publication)->length >= capacity) {
-                capacity *= 2;
-                VTL_publication_marked_text_Part* new_parts = (VTL_publication_marked_text_Part*)realloc(
-                    (*pp_publication)->parts, capacity * sizeof(VTL_publication_marked_text_Part));
-                if (!new_parts) {
-                    free(buffer);
-                    free((*pp_publication)->parts);
-                    free(*pp_publication);
-                    return;
-                }
-                (*pp_publication)->parts = new_parts;
-            }
-            
-            // Создаем новую часть
-            VTL_publication_marked_text_Part* part = &(*pp_publication)->parts[(*pp_publication)->length++];
-            
-            // Выделяем память для текста части и добавляем завершающий нуль
-            part->text = (VTL_publication_text_Symbol*)malloc((buffer_pos + 1) * sizeof(VTL_publication_text_Symbol));
-            if (!part->text) {
-                free(buffer);
-                // Освобождаем память предыдущих частей
-                for (size_t i = 0; i < (*pp_publication)->length - 1; i++) {
-                    free((*pp_publication)->parts[i].text);
-                }
-                free((*pp_publication)->parts);
-                free(*pp_publication);
-                return;
-            }
-            
-            // Копируем текст
-            memcpy(part->text, buffer, buffer_pos * sizeof(VTL_publication_text_Symbol));
-            part->text[buffer_pos] = '\0';
-            part->length = buffer_pos;
-            
-            // Устанавливаем тип форматирования
-            part->type = 0;
-            if (in_bold) VTL_publication_marked_text_modification_SetBold(&part->type);
-            if (in_italic) VTL_publication_marked_text_modification_SetItalic(&part->type);
-            if (in_strike) VTL_publication_marked_text_modification_SetStrikethrough(&part->type);
-            
-            // Сбрасываем буфер
-            buffer_pos = 0;
-        }
-    };
+    size_t capacity = 16; // Начальная емкость для частей текста
     
     while (pos < text_len) {
         if (text[pos] == '<') {
@@ -193,41 +231,18 @@ VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_
             
             if (pos < text_len && text[pos] == '>') {
                 // Закрываем текущую часть текста перед тегом
-                VTL_publication_text_AddTextPart();
-                
-                // Проверяем, какой тег мы нашли
-                size_t tag_len = tag_name_end - tag_name_start;
-                if (tag_len == 1 && (text[tag_name_start] == 'b' || text[tag_name_start] == 'B')) {
-                    // Тег <b> или </b>
-                    in_bold = !is_closing;
-                } else if (tag_len == 6 && VTL_publication_text_StringCompareInsensitive(&text[tag_name_start], "strong", 6) == 0) {
-                    // Тег <strong> или </strong>
-                    in_bold = !is_closing;
-                } else if (tag_len == 1 && (text[tag_name_start] == 'i' || text[tag_name_start] == 'I')) {
-                    // Тег <i> или </i>
-                    in_italic = !is_closing;
-                } else if (tag_len == 2 && VTL_publication_text_StringCompareInsensitive(&text[tag_name_start], "em", 2) == 0) {
-                    // Тег <em> или </em>
-                    in_italic = !is_closing;
-                } else if (tag_len == 1 && (text[tag_name_start] == 's' || text[tag_name_start] == 'S')) {
-                    // Тег <s> или </s>
-                    in_strike = !is_closing;
-                } else if (tag_len == 3 && VTL_publication_text_StringCompareInsensitive(&text[tag_name_start], "del", 3) == 0) {
-                    // Тег <del> или </del>
-                    in_strike = !is_closing;
-                } else if (tag_len == 6 && VTL_publication_text_StringCompareInsensitive(&text[tag_name_start], "strike", 6) == 0) {
-                    // Тег <strike> или </strike>
-                    in_strike = !is_closing;
-                } else if (tag_len == 2 && VTL_publication_text_StringCompareInsensitive(&text[tag_name_start], "br", 2) == 0) {
-                    // Тег <br> - добавляем перенос строки в буфер
-                    buffer[buffer_pos++] = '\n';
-                } else if (tag_len == 1 && (text[tag_name_start] == 'p' || text[tag_name_start] == 'P')) {
-                    // Теги <p> и </p> - добавляем перенос строки
-                    if (is_closing) {
-                        buffer[buffer_pos++] = '\n';
-                        buffer[buffer_pos++] = '\n';
-                    }
+                VTL_AppResult result = VTL_publication_html_AddTextPart(pp_publication, buffer, buffer_pos, 
+                                                                     &capacity, in_bold, in_italic, in_strike);
+                if (result != VTL_res_kOk) {
+                    free(buffer);
+                    return result;
                 }
+                buffer_pos = 0;
+                
+                // Обрабатываем тег
+                size_t tag_len = tag_name_end - tag_name_start;
+                VTL_publication_html_ProcessTag(text, tag_name_start, tag_len, is_closing, 
+                                              &in_bold, &in_italic, &in_strike, buffer, &buffer_pos);
                 
                 pos++; // Пропускаем >
             }
@@ -238,9 +253,42 @@ VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_
     }
     
     // Добавляем оставшийся текст в буфере
-    VTL_publication_text_AddTextPart();
+    VTL_AppResult result = VTL_publication_html_AddTextPart(pp_publication, buffer, buffer_pos, 
+                                                      &capacity, in_bold, in_italic, in_strike);
     
     free(buffer);
+    return result;
+}
+
+static void VTL_publication_html_FreeResources(VTL_publication_MarkedText* p_publication) {
+    for (size_t i = 0; i < p_publication->length; i++) {
+        free(p_publication->parts[i].text);
+    }
+    free(p_publication->parts);
+    free(p_publication);
+}
+
+VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_publication, 
+                                                    const VTL_publication_Text* p_src_text)
+{
+    if (!pp_publication || !p_src_text || !p_src_text->text) {
+        return VTL_res_kInvalidParamErr;
+    }
+    
+    // Инициализируем структуру размеченного текста
+    VTL_AppResult result = VTL_publication_html_InitMarkedTextStruct(pp_publication);
+    if (result != VTL_res_kOk) {
+        return result;
+    }
+    
+    // Разбираем HTML текст
+    result = VTL_publication_html_ParseText(pp_publication, p_src_text);
+    if (result != VTL_res_kOk) {
+        VTL_publication_html_FreeResources(*pp_publication);
+        *pp_publication = NULL;
+        return result;
+    }
+    
     return VTL_res_kOk;
 }
 
