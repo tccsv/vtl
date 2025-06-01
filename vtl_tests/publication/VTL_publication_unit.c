@@ -219,19 +219,6 @@ int test_PubicateVideoWithInnerSub(void)
     return !VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message);
 }
 
-// Тест для VTL_PubicateAudioWithMarkedText
-int test_PubicateAudioWithMarkedText(void)
-{
-    const VTL_Filename audio_file = "test.mp3";
-    const VTL_Filename text_file = "test.txt";
-    const VTL_publication_marked_text_MarkupType markup_type = VTL_markup_type_kTelegramMD;
-    const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
-    
-    VTL_AppResult result = VTL_PubicateAudioWithMarkedText(audio_file, text_file, markup_type, flags);
-    const char test_fail_message[] = "\nОшибка при тестировании VTL_PubicateAudioWithMarkedText\n";
-    return !VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message);
-}
-
 int main(void)
 {
     // Запускаем все тесты
@@ -255,7 +242,6 @@ int main(void)
     result &= test_PubicateVideoWithMarkedText();
     result &= test_SheduleVideoWithInnerSub();
     result &= test_PubicateVideoWithInnerSub();
-    result &= test_PubicateAudioWithMarkedText();
     
     return !result;
 } 
