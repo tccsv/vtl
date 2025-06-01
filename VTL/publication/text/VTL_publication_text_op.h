@@ -6,7 +6,7 @@
 extern "C"
 {
 #endif
-#include <VTL/publication/text/bbcode/VTL_publication_text_op_bbcode.c>
+#include <VTL/publication/text/bbcode/VTL_publication_text_op_bbcode.h>
 #include <VTL/publication/text/VTL_publication_text_data.h>
 #include <VTL/VTL_publication_markup_text_flags.h>
 #include <VTL/VTL_app_result.h>

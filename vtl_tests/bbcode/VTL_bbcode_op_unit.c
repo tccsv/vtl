@@ -1,3 +1,4 @@
+#include <VTL/publication/text/bbcode/VTL_publication_text_op_bbcode.c>
 #include <VTL/publication/text/VTL_publication_text_op.c>
 #include <string.h>
 VTL_publication_Text create_test_text(const char *str)
@@ -205,7 +206,6 @@ bool VTL_tests_bbcode_FromBBTestMultipleTagsTestUnclosedTags()
 
     if (passed)
     {
-        // Check first part (bold)
         passed = (marked_result->parts[0].length == 5 &&
                   memcmp(marked_result->parts[0].text, "Bold ", 5) == 0 &&
                   marked_result->parts[0].type == VTL_TEXT_MODIFICATION_BOLD);
@@ -213,7 +213,6 @@ bool VTL_tests_bbcode_FromBBTestMultipleTagsTestUnclosedTags()
 
     if (passed)
     {
-        // Check second part (bold + italic)
         passed = (marked_result->parts[1].length == 6 &&
                   memcmp(marked_result->parts[1].text, "Italic", 6) == 0 &&
                   marked_result->parts[1].type == (VTL_TEXT_MODIFICATION_BOLD | VTL_TEXT_MODIFICATION_ITALIC));
@@ -256,23 +255,18 @@ bool VTL_tests_bbcode_FromBBTestSingleTag()
 
 bool VTL_tests_bbcode_FromBBTestEmptyString()
 {
-    // Инициализация переменных
     VTL_publication_MarkedText *marked_result = NULL;
     VTL_publication_Text text = create_test_text("");
 
-    // Выполнение основной операции
     VTL_AppResult init_result = VTL_publication_text_InitFromBB(&marked_result, &text);
 
-    // Проверка первого условия
     bool passed = init_result == VTL_res_kOk;
 
-    // Если первое условие прошло успешно, проверяем второе
     if (passed)
     {
         passed = (marked_result != NULL && marked_result->length == 0);
     }
 
-    // Освобождение памяти
     if (marked_result)
         free(marked_result->parts);
     free(marked_result);

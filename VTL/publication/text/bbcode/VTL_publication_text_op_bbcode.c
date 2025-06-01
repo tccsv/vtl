@@ -1,10 +1,6 @@
-#include <VTL/publication/text/VTL_publication_text_data.h>
-#include <VTL/VTL_publication_markup_text_flags.h>
-#include <VTL/VTL_app_result.h>
-#include <stdlib.h>
-#include <string.h>
+#include "VTL_publication_text_op_bbcode.h"
 
-static size_t VTL_publication_text_bbcode_CountTextParts(const VTL_publication_Text *p_src_text)
+ size_t VTL_publication_text_bbcode_CountTextParts(const VTL_publication_Text *p_src_text)
 {
     size_t part_count = 1;
     bool in_tag = false;
@@ -25,7 +21,7 @@ static size_t VTL_publication_text_bbcode_CountTextParts(const VTL_publication_T
     return part_count;
 }
 
-static void VTL_publication_text_bbcode_ProcessTag(const char *tag_start, const char *tag_end,
+ void VTL_publication_text_bbcode_ProcessTag(const char *tag_start, const char *tag_end,
                                                    VTL_publication_text_modification_Flags *current_flags)
 {
     bool is_closing = (*tag_start == '/');
@@ -58,7 +54,7 @@ static void VTL_publication_text_bbcode_ProcessTag(const char *tag_start, const 
     }
 }
 
-static VTL_AppResult VTL_publication_text_bbcode_AddTextPart(VTL_publication_MarkedText *block,
+ VTL_AppResult VTL_publication_text_bbcode_AddTextPart(VTL_publication_MarkedText *block,
                                                              size_t max_parts,
                                                              const char *text_start,
                                                              size_t text_length,
@@ -77,7 +73,7 @@ static VTL_AppResult VTL_publication_text_bbcode_AddTextPart(VTL_publication_Mar
     return VTL_res_kOk;
 }
 
-static VTL_AppResult VTL_publication_text_bbcode_ValidateInputParams(VTL_publication_MarkedText **pp_publication,
+ VTL_AppResult VTL_publication_text_bbcode_ValidateInputParams(VTL_publication_MarkedText **pp_publication,
                                                                      const VTL_publication_Text *p_src_text)
 {
     if (!pp_publication)
@@ -89,7 +85,7 @@ static VTL_AppResult VTL_publication_text_bbcode_ValidateInputParams(VTL_publica
     return VTL_res_kOk;
 }
 
-static VTL_AppResult VTL_publication_text_bbcode_AllocateTextBlock(VTL_publication_MarkedText **block, size_t part_count)
+ VTL_AppResult VTL_publication_text_bbcode_AllocateTextBlock(VTL_publication_MarkedText **block, size_t part_count)
 {
     *block = (VTL_publication_MarkedText *)malloc(sizeof(VTL_publication_MarkedText));
     if (!*block)
@@ -107,7 +103,7 @@ static VTL_AppResult VTL_publication_text_bbcode_AllocateTextBlock(VTL_publicati
     return VTL_res_kOk;
 }
 
-static VTL_AppResult VTL_publication_text_bbcode_ProcessPreTagText(VTL_publication_MarkedText *block,
+ VTL_AppResult VTL_publication_text_bbcode_ProcessPreTagText(VTL_publication_MarkedText *block,
                                                                    size_t part_count,
                                                                    const char *text_start,
                                                                    const char *tag_pos,
@@ -121,7 +117,7 @@ static VTL_AppResult VTL_publication_text_bbcode_ProcessPreTagText(VTL_publicati
     return VTL_res_kOk;
 }
 
-static void VTL_publication_text_bbcode_ProcessBBTag(const char **current_pos,
+ void VTL_publication_text_bbcode_ProcessBBTag(const char **current_pos,
                                                      const char **text_start,
                                                      const char *text_end,
                                                      VTL_publication_text_modification_Flags *current_flags)
@@ -142,7 +138,7 @@ static void VTL_publication_text_bbcode_ProcessBBTag(const char **current_pos,
     }
 }
 
-static VTL_AppResult VTL_publication_text_bbcode_ProcessRemainingText(VTL_publication_MarkedText *block,
+ VTL_AppResult VTL_publication_text_bbcode_ProcessRemainingText(VTL_publication_MarkedText *block,
                                                                       size_t part_count,
                                                                       const char *text_start,
                                                                       const char *text_end,
@@ -156,12 +152,12 @@ static VTL_AppResult VTL_publication_text_bbcode_ProcessRemainingText(VTL_public
     return VTL_res_kOk;
 }
 
-static int VTL_publication_text_bbcode_NeedsBBTag(VTL_publication_text_modification_Flags type, int tag_flag)
+ int VTL_publication_text_bbcode_NeedsBBTag(VTL_publication_text_modification_Flags type, int tag_flag)
 {
     return (type & tag_flag) != 0;
 }
 
-static size_t VTL_publication_text_bbcode_GetBBTagsLength(VTL_publication_text_modification_Flags type)
+ size_t VTL_publication_text_bbcode_GetBBTagsLength(VTL_publication_text_modification_Flags type)
 {
     size_t length = 0;
 
@@ -175,7 +171,7 @@ static size_t VTL_publication_text_bbcode_GetBBTagsLength(VTL_publication_text_m
     return length;
 }
 
-static char *VTL_publication_text_bbcode_WriteOpeningTags(char *dest, VTL_publication_text_modification_Flags type)
+ char *VTL_publication_text_bbcode_WriteOpeningTags(char *dest, VTL_publication_text_modification_Flags type)
 {
     if (VTL_publication_text_bbcode_NeedsBBTag(type, VTL_TEXT_MODIFICATION_BOLD))
     {
@@ -196,7 +192,7 @@ static char *VTL_publication_text_bbcode_WriteOpeningTags(char *dest, VTL_public
     return dest;
 }
 
-static char *VTL_publication_text_bbcode_WriteClosingTags(char *dest, VTL_publication_text_modification_Flags type)
+ char *VTL_publication_text_bbcode_WriteClosingTags(char *dest, VTL_publication_text_modification_Flags type)
 {
     if (VTL_publication_text_bbcode_NeedsBBTag(type, VTL_TEXT_MODIFICATION_STRIKETHROUGH))
     {
@@ -217,7 +213,7 @@ static char *VTL_publication_text_bbcode_WriteClosingTags(char *dest, VTL_public
     return dest;
 }
 
-static bool VTL_publication_text_bbcode_TagsEqual(int flags1, int flags2)
+ bool VTL_publication_text_bbcode_TagsEqual(int flags1, int flags2)
 {
     return (flags1 & (VTL_TEXT_MODIFICATION_BOLD |
                       VTL_TEXT_MODIFICATION_ITALIC |
