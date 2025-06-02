@@ -12,7 +12,14 @@ typedef enum _VTL_AppResult
 {
     VTL_res_kOk = 0,
     
+    // Общие ошибки
+    VTL_res_kInvalidParamErr = -1,
+    VTL_res_kMemAllocErr = -2,
+    VTL_res_kFileOpenErr = -3,
+    VTL_res_kFileReadErr = -4,
+    VTL_res_kFileWriteErr = -5,
     
+    // Ошибки файловой системы
     VTL_res_video_fs_r_kMissingFileErr = 1,
     VTL_res_video_fs_r_kFileIsBusyErr,
 
