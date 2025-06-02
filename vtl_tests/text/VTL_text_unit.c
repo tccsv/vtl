@@ -20,8 +20,6 @@ static int VTL_test_AssertStringsEqual(const char* actual, const char* expected)
 
 // Тест 1: Преобразование простого HTML в размеченный текст
 static int VTL_test_HtmlToMarkedTextSimple() {
-    printf("Тест 1: Преобразование простого HTML в размеченный текст\n");
-    
     // Создаем простой HTML текст
     const char* html_str = "<p>Это <b>жирный</b> текст</p>";
     VTL_publication_Text html_text;
@@ -44,16 +42,6 @@ static int VTL_test_HtmlToMarkedTextSimple() {
         return 0;
     }
     
-    // Выводим информацию о частях для отладки
-    printf("Количество частей: %zu\n", marked_text->length);
-    for (size_t i = 0; i < marked_text->length; i++) {
-        printf("Часть %zu: длина=%zu, тип=%d, текст='", i + 1, marked_text->parts[i].length, marked_text->parts[i].type);
-        for (size_t j = 0; j < marked_text->parts[i].length; j++) {
-            printf("%c", marked_text->parts[i].text[j]);
-        }
-        printf("'\n");
-    }
-    
     // Проверяем, что есть хотя бы одна жирная часть
     int has_bold_part = 0;
     for (size_t i = 0; i < marked_text->length; i++) {
@@ -70,14 +58,11 @@ static int VTL_test_HtmlToMarkedTextSimple() {
     }
     
     VTL_publication_marked_text_Free(marked_text);
-    printf("Тест 1 пройден успешно\n");
     return 1;
 }
 
 // Тест 2: Преобразование размеченного текста в HTML
 static int VTL_test_MarkedTextToHtml() {
-    printf("Тест 2: Преобразование размеченного текста в HTML\n");
-    
     // Создаем размеченный текст вручную с ASCII символами
     VTL_publication_MarkedText marked_text;
     marked_text.length = 3;
@@ -113,9 +98,6 @@ static int VTL_test_MarkedTextToHtml() {
         return 0;
     }
     
-    // Выводим полученный HTML для отладки
-    printf("Полученный HTML: '%s'\n", html_text->text);
-    
     // Проверяем, что HTML содержит нужные теги и части текста
     test_fail_message = "\nОшибка: HTML не содержит необходимых элементов\n";
     if (!VTL_test_CheckCondition(
@@ -143,14 +125,11 @@ static int VTL_test_MarkedTextToHtml() {
     }
     free(marked_text.parts);
     
-    printf("Тест 2 пройден успешно\n");
     return 1;
 }
 
 // Тест 3: Преобразование размеченного текста в обычный текст
 static int VTL_test_MarkedTextToRegularText() {
-    printf("Тест 3: Преобразование размеченного текста в обычный текст\n");
-    
     // Создаем размеченный текст вручную с ASCII символами
     VTL_publication_MarkedText marked_text;
     marked_text.length = 3;
@@ -186,9 +165,6 @@ static int VTL_test_MarkedTextToRegularText() {
         return 0;
     }
     
-    // Выводим полученный текст для отладки
-    printf("Полученный текст: '%s'\n", regular_text->text);
-    
     // Проверяем, что текст содержит все нужные части
     test_fail_message = "\nОшибка: текст не содержит необходимых элементов\n";
     if (!VTL_test_CheckCondition(
@@ -214,14 +190,11 @@ static int VTL_test_MarkedTextToRegularText() {
     }
     free(marked_text.parts);
     
-    printf("Тест 3 пройден успешно\n");
     return 1;
 }
 
 // Тест 4: Проверка обработки различных HTML тегов
 static int VTL_test_HtmlTagsProcessing() {
-    printf("Тест 4: Проверка обработки различных HTML тегов\n");
-    
     // Создаем HTML с разными тегами
     const char* html_str = "<p>Это <b>жирный</b>, <i>курсивный</i> и <s>зачеркнутый</s> текст</p>";
     VTL_publication_Text html_text;
@@ -268,14 +241,11 @@ static int VTL_test_HtmlTagsProcessing() {
     VTL_publication_marked_text_Free(marked_text);
     VTL_publication_text_Free(html_result);
     
-    printf("Тест 4 пройден успешно\n");
     return 1;
 }
 
 // Тест 5: Обработка вложенных HTML тегов
 static int VTL_test_NestedHtmlTags() {
-    printf("Тест 5: Обработка вложенных HTML тегов\n");
-    
     // Создаем HTML с вложенными тегами
     const char* html_str = "<p>Это <b>жирный <i>и курсивный</i></b> текст</p>";
     VTL_publication_Text html_text;
@@ -309,14 +279,11 @@ static int VTL_test_NestedHtmlTags() {
     }
     
     VTL_publication_marked_text_Free(marked_text);
-    printf("Тест 5 пройден успешно\n");
     return 1;
 }
 
 // Тест 6: Обработка HTML с переносами строк
 static int VTL_test_HtmlWithLineBreaks() {
-    printf("Тест 6: Обработка HTML с переносами строк\n");
-    
     // Создаем HTML с переносами строк
     const char* html_str = "<p>Строка 1<br>Строка 2</p>";
     VTL_publication_Text html_text;
@@ -355,14 +322,11 @@ static int VTL_test_HtmlWithLineBreaks() {
     VTL_publication_text_Free(regular_text);
     VTL_publication_marked_text_Free(marked_text);
     
-    printf("Тест 6 пройден успешно\n");
     return 1;
 }
 
 // Тест 7: Обработка пустого HTML
 static int VTL_test_EmptyHtml() {
-    printf("Тест 7: Обработка пустого HTML\n");
-    
     // Создаем пустой HTML
     const char* html_str = "";
     VTL_publication_Text html_text;
@@ -387,14 +351,11 @@ static int VTL_test_EmptyHtml() {
     }
     
     VTL_publication_marked_text_Free(marked_text);
-    printf("Тест 7 пройден успешно\n");
     return 1;
 }
 
 // Тест 8: Обработка HTML с различными типами тегов <strong>, <em>, <del>
 static int VTL_test_HtmlWithVariousTags() {
-    printf("Тест 8: Обработка HTML с различными типами тегов\n");
-    
     // Создаем HTML с различными типами тегов
     const char* html_str = "<p><strong>Жирный</strong> <em>курсивный</em> <del>зачеркнутый</del></p>";
     VTL_publication_Text html_text;
@@ -450,7 +411,6 @@ static int VTL_test_HtmlWithVariousTags() {
     }
     
     VTL_publication_marked_text_Free(marked_text);
-    printf("Тест 8 пройден успешно\n");
     return 1;
 }
 
@@ -471,13 +431,6 @@ int main(void)
     if (!VTL_test_HtmlWithLineBreaks()) fail_count++;
     if (!VTL_test_EmptyHtml()) fail_count++;
     if (!VTL_test_HtmlWithVariousTags()) fail_count++;
-    
-    // Выводим общий результат
-    if (fail_count == 0) {
-        printf("Все тесты пройдены успешно!\n");
-    } else {
-        printf("Не пройдено тестов: %d\n", fail_count);
-    }
     
     // Возвращаем число ошибок
     return fail_count;

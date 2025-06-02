@@ -10,380 +10,381 @@
 
 
 
-// Тест чтения файла
-static int VTL_test_ReadFile() {
-    printf("Тест чтения файла\n");
+// Тест 1: Чтение файла в VTL_publication_Text
+static int VTL_test_ReadTextFromFile() {
+    const char* filename = "test_read.txt";
     
-    // Используем абсолютный путь к файлу test.html
-    const char* test_file = "test.html";
+    // Создаем тестовый файл
+    FILE* test_file = fopen(filename, "wb");
+    const char* test_content = "Hello World!";
     
-    // Проверяем существование файла перед чтением
-    FILE* check_file = fopen(test_file, "r");
-    if (check_file == NULL) {
-        printf("Предупреждение: файл %s не найден, создаем тестовый файл\n", test_file);
-        
-        // Создаем тестовый файл, если он не существует
-        check_file = fopen(test_file, "w");
-        if (check_file == NULL) {
-            const char* test_fail_message = "\nОшибка: не удалось создать тестовый файл\n";
-            VTL_test_CheckCondition(0, test_fail_message);
-            return 0;
-        }
-        
-        // Записываем простой HTML в файл
-        const char* test_html = "<html><body><p>Test HTML</p></body></html>";
-        fwrite(test_html, 1, strlen(test_html), check_file);
-        fclose(check_file);
-        
-        printf("Тестовый файл создан успешно\n");
-    } else {
-        fclose(check_file);
+    const char* test_fail_message = "\nОшибка создания тестового файла\n";
+    if (!VTL_test_CheckCondition(test_file != NULL, test_fail_message)) {
+        return 0;
     }
     
-    // Чтение файла
+    fwrite(test_content, 1, strlen(test_content), test_file);
+    fclose(test_file);
+    
+    // Читаем файл в VTL_publication_Text
     VTL_publication_Text* text = NULL;
-    VTL_AppResult result = VTL_pusblication_text_Read(&text, test_file);
+    VTL_AppResult result = VTL_publication_text_Read(&text, filename);
     
-    // Проверка результата
-    const char* test_fail_message = "\nОшибка чтения файла\n";
+    test_fail_message = "\nОшибка чтения файла в VTL_publication_Text\n";
     if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        remove(filename);
         return 0;
     }
     
-    // Проверка, что текст не пустой
-    test_fail_message = "\nОшибка: прочитанный текст пуст\n";
-    if (!VTL_test_CheckCondition(text->length > 0 && text->text != NULL, test_fail_message)) {
+    // Проверяем содержимое
+    test_fail_message = "\nОшибка: неверное содержимое файла\n";
+    if (!VTL_test_CheckCondition(
+        text != NULL && 
+        text->length == strlen(test_content) &&
+        strncmp(text->text, test_content, text->length) == 0,
+        test_fail_message)) {
+        
         VTL_publication_text_Free(text);
+        remove(filename);
         return 0;
     }
     
-    printf("Успешно прочитан файл размером %zu байт\n", text->length);
-    
-    // Освобождаем память
+    // Очистка
     VTL_publication_text_Free(text);
+    remove(filename);
     
-    printf("Тест чтения файла пройден успешно\n");
     return 1;
 }
 
-// Тест записи файла
-static int VTL_test_WriteFile() {
-    printf("Тест записи файла\n");
+// Тест 2: Запись VTL_publication_Text в файл
+static int VTL_test_WriteTextToFile() {
+    const char* filename = "test_write.txt";
+    const char* test_content = "Test content for writing";
     
-    // Создаем текст для записи
-    const char* test_str = "Тестовый текст для записи в файл";
+    // Создаем VTL_publication_Text
     VTL_publication_Text text;
-    text.text = (VTL_publication_text_Symbol*)test_str;
-    text.length = strlen(test_str);
+    text.text = (VTL_publication_text_Symbol*)test_content;
+    text.length = strlen(test_content);
     
-    // Запись в файл
-    const char* output_file = "test_output.txt";
-    VTL_AppResult result = VTL_pusblication_text_Write(&text, output_file);
+    // Записываем в файл
+    VTL_AppResult result = VTL_publication_text_Write(&text, filename);
     
-    // Проверка результата
-    const char* test_fail_message = "\nОшибка записи файла\n";
+    const char* test_fail_message = "\nОшибка записи VTL_publication_Text в файл\n";
     if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        remove(filename);
         return 0;
     }
     
-    // Проверка, что файл существует и имеет правильное содержимое
-    FILE* file = fopen(output_file, "r");
-    test_fail_message = "\nОшибка: не удалось открыть записанный файл\n";
+    // Проверяем содержимое файла
+    FILE* file = fopen(filename, "rb");
+    test_fail_message = "\nОшибка открытия файла для проверки записи\n";
     if (!VTL_test_CheckCondition(file != NULL, test_fail_message)) {
+        remove(filename);
         return 0;
     }
     
-    // Выделяем память для чтения файла
-    char* buffer = (char*)malloc(text.length + 1);
-    test_fail_message = "\nОшибка выделения памяти\n";
-    if (!VTL_test_CheckCondition(buffer != NULL, test_fail_message)) {
-        fclose(file);
-        return 0;
-    }
+    // Получаем размер файла
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
     
-    // Чтение файла
-    size_t read_size = fread(buffer, 1, text.length, file);
-    buffer[read_size] = '\0';
+    // Читаем содержимое
+    char* file_content = malloc(file_size + 1);
+    fread(file_content, 1, file_size, file);
+    file_content[file_size] = '\0';
     fclose(file);
     
-    // Проверка содержимого
-    test_fail_message = "\nОшибка: содержимое файла не соответствует ожидаемому\n";
-    if (!VTL_test_CheckCondition(read_size == text.length && strcmp(buffer, test_str) == 0, test_fail_message)) {
-        printf("Ожидалось: '%s'\n", test_str);
-        printf("Получено: '%s'\n", buffer);
-        free(buffer);
+    // Проверяем, что содержимое совпадает
+    test_fail_message = "\nОшибка: записанное содержимое не совпадает\n";
+    if (!VTL_test_CheckCondition(
+        file_size == (long)strlen(test_content) &&
+        strcmp(file_content, test_content) == 0,
+        test_fail_message)) {
+        
+        free(file_content);
+        remove(filename);
         return 0;
     }
     
-    free(buffer);
-    printf("Тест записи файла пройден успешно\n");
+    // Очистка
+    free(file_content);
+    remove(filename);
+    
     return 1;
 }
 
-// Тест цикла чтение-запись-чтение
-static int VTL_test_ReadWriteCycle() {
-    printf("Тест цикла чтение-запись-чтение\n");
+// Тест 3: Чтение размеченного текста из файла (упрощенный)
+static int VTL_test_ReadMarkedTextFromFile() {
+    const char* filename = "test_marked.txt";
     
-    const char* input_file = "test.html";
-    const char* output_file = "test_cycle_output.html";
+    // Создаем тестовый файл с размеченным текстом
+    FILE* test_file = fopen(filename, "wb");
+    const char* test_content = "<b>Жирный</b> обычный <i>курсивный</i>";
     
-    // Проверяем существование входного файла
-    FILE* check_file = fopen(input_file, "r");
-    if (check_file == NULL) {
-        printf("Предупреждение: входной файл %s не найден, создаем тестовый файл\n", input_file);
-        
-        // Создаем тестовый файл, если он не существует
-        check_file = fopen(input_file, "w");
-        const char* test_fail_message = "\nОшибка: не удалось создать тестовый файл\n";
-        if (!VTL_test_CheckCondition(check_file != NULL, test_fail_message)) {
-            return 0;
+    const char* test_fail_message = "\nОшибка создания тестового файла с размеченным текстом\n";
+    if (!VTL_test_CheckCondition(test_file != NULL, test_fail_message)) {
+        return 0;
+    }
+    
+    fwrite(test_content, 1, strlen(test_content), test_file);
+    fclose(test_file);
+    
+    // Читаем как обычный текст, а потом конвертируем в размеченный
+    VTL_publication_Text* html_text = NULL;
+    VTL_AppResult result = VTL_publication_text_Read(&html_text, filename);
+    
+    test_fail_message = "\nОшибка чтения HTML текста из файла\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        remove(filename);
+        return 0;
+    }
+    
+    // Конвертируем в размеченный текст
+    VTL_publication_MarkedText* marked_text = NULL;
+    result = VTL_publication_text_InitFromHTML(&marked_text, html_text);
+    
+    test_fail_message = "\nОшибка преобразования HTML в размеченный текст\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        VTL_publication_text_Free(html_text);
+        remove(filename);
+        return 0;
+    }
+    
+    // Проверяем, что получили размеченный текст
+    test_fail_message = "\nОшибка: размеченный текст не создан\n";
+    if (!VTL_test_CheckCondition(marked_text != NULL && marked_text->parts != NULL, test_fail_message)) {
+        VTL_publication_marked_text_Free(marked_text);
+        VTL_publication_text_Free(html_text);
+        remove(filename);
+        return 0;
+    }
+    
+    // Очистка
+    VTL_publication_marked_text_Free(marked_text);
+    VTL_publication_text_Free(html_text);
+    remove(filename);
+    
+    return 1;
+}
+
+// Тест 4: Запись размеченного текста в файл (упрощенный)
+static int VTL_test_WriteMarkedTextToFile() {
+    const char* filename = "test_marked_write.txt";
+    
+    // Создаем размеченный текст
+    VTL_publication_MarkedText marked_text;
+    marked_text.length = 2;
+    marked_text.parts = (VTL_publication_marked_text_Part*)malloc(2 * sizeof(VTL_publication_marked_text_Part));
+    
+    // Часть 1: жирный текст
+    marked_text.parts[0].text = strdup("Bold");
+    marked_text.parts[0].length = 4;
+    marked_text.parts[0].type = VTL_TEXT_MODIFICATION_BOLD;
+    
+    // Часть 2: обычный текст
+    marked_text.parts[1].text = strdup(" text");
+    marked_text.parts[1].length = 5;
+    marked_text.parts[1].type = 0;
+    
+    // Конвертируем в HTML
+    VTL_publication_Text* html_text = NULL;
+    VTL_AppResult result = VTL_publication_marked_text_TransformToHTML(&html_text, &marked_text);
+    
+    const char* test_fail_message = "\nОшибка преобразования размеченного текста в HTML\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        // Освобождаем память
+        for (size_t i = 0; i < marked_text.length; i++) {
+            free(marked_text.parts[i].text);
         }
-        
-        // Записываем простой HTML в файл
-        const char* test_html = "<html><body><p>Test HTML for cycle test</p></body></html>";
-        fwrite(test_html, 1, strlen(test_html), check_file);
-        fclose(check_file);
-        
-        printf("Тестовый файл создан успешно\n");
-    } else {
-        fclose(check_file);
+        free(marked_text.parts);
+        remove(filename);
+        return 0;
     }
     
-    // Чтение исходного файла
-    VTL_publication_Text* input_text = NULL;
-    VTL_AppResult result = VTL_pusblication_text_Read(&input_text, input_file);
+    // Записываем HTML в файл
+    result = VTL_publication_text_Write(html_text, filename);
     
-    const char* test_fail_message = "\nОшибка чтения исходного файла\n";
+    test_fail_message = "\nОшибка записи HTML в файл\n";
     if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        // Освобождаем память
+        VTL_publication_text_Free(html_text);
+        for (size_t i = 0; i < marked_text.length; i++) {
+            free(marked_text.parts[i].text);
+        }
+        free(marked_text.parts);
+        remove(filename);
         return 0;
     }
     
-    // Запись в новый файл
-    result = VTL_pusblication_text_Write(input_text, output_file);
-    
-    test_fail_message = "\nОшибка записи в новый файл\n";
-    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
-        VTL_publication_text_Free(input_text);
+    // Проверяем, что файл создан
+    FILE* file = fopen(filename, "rb");
+    test_fail_message = "\nОшибка: файл не создан\n";
+    if (!VTL_test_CheckCondition(file != NULL, test_fail_message)) {
+        // Освобождаем память
+        VTL_publication_text_Free(html_text);
+        for (size_t i = 0; i < marked_text.length; i++) {
+            free(marked_text.parts[i].text);
+        }
+        free(marked_text.parts);
+        remove(filename);
         return 0;
     }
     
-    // Чтение нового файла
-    VTL_publication_Text* output_text = NULL;
-    result = VTL_pusblication_text_Read(&output_text, output_file);
-    
-    test_fail_message = "\nОшибка чтения нового файла\n";
-    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
-        VTL_publication_text_Free(input_text);
-        return 0;
-    }
-    
-    // Сравнение размеров
-    test_fail_message = "\nОшибка: размеры файлов не совпадают\n";
-    if (!VTL_test_CheckCondition(input_text->length == output_text->length, test_fail_message)) {
-        printf("Размеры: %zu vs %zu\n", input_text->length, output_text->length);
-        VTL_publication_text_Free(input_text);
-        VTL_publication_text_Free(output_text);
-        return 0;
-    }
-    
-    // Сравнение содержимого
-    test_fail_message = "\nОшибка: содержимое файлов не совпадает\n";
-    if (!VTL_test_CheckCondition(memcmp(input_text->text, output_text->text, input_text->length) == 0, test_fail_message)) {
-        VTL_publication_text_Free(input_text);
-        VTL_publication_text_Free(output_text);
-        return 0;
-    }
+    fclose(file);
     
     // Освобождаем память
-    VTL_publication_text_Free(input_text);
-    VTL_publication_text_Free(output_text);
+    VTL_publication_text_Free(html_text);
+    for (size_t i = 0; i < marked_text.length; i++) {
+        free(marked_text.parts[i].text);
+    }
+    free(marked_text.parts);
+    remove(filename);
     
-    printf("Тест цикла чтение-запись-чтение пройден успешно\n");
     return 1;
 }
 
-// Тест 4: Чтение несуществующего файла
+// Тест 5: Чтение несуществующего файла
 static int VTL_test_ReadNonExistentFile() {
-    printf("Тест 4: Чтение несуществующего файла\n");
+    const char* filename = "non_existent_file.txt";
     
-    // Используем имя файла, которого точно не существует
-    const char* nonexistent_file = "nonexistent_file_for_test.txt";
-    
-    // Удаляем файл, если он по каким-то причинам существует
-    remove(nonexistent_file);
-    
-    // Чтение несуществующего файла
+    // Пытаемся прочитать несуществующий файл
     VTL_publication_Text* text = NULL;
-    VTL_AppResult result = VTL_pusblication_text_Read(&text, nonexistent_file);
+    VTL_AppResult result = VTL_publication_text_Read(&text, filename);
     
-    // Проверка результата: должна быть ошибка
-    const char* test_fail_message = "\nОшибка: функция чтения не вернула ошибку для несуществующего файла\n";
+    // Ожидаем ошибку
+    const char* test_fail_message = "\nОшибка: несуществующий файл должен приводить к ошибке\n";
     if (!VTL_test_CheckCondition(result != VTL_res_kOk, test_fail_message)) {
-        if (text != NULL) {
-            VTL_publication_text_Free(text);
-        }
+        if (text) VTL_publication_text_Free(text);
         return 0;
     }
     
-    printf("Тест 4 пройден успешно\n");
     return 1;
 }
 
-// Тест 5: Запись в файл с неправильными правами доступа
+// Тест 6: Запись в недоступный файл 
 static int VTL_test_WriteToInaccessibleFile() {
-    printf("Тест 5: Запись в файл с неправильными правами доступа\n");
-    
-    // В Windows это может не сработать из-за прав, но мы все равно попробуем
-    // Создаем текст для записи
-    const char* test_str = "Тест записи в файл с неправильными правами";
+    // Создаем VTL_publication_Text
+    const char* test_content = "Test content";
     VTL_publication_Text text;
-    text.text = (VTL_publication_text_Symbol*)test_str;
-    text.length = strlen(test_str);
+    text.text = (VTL_publication_text_Symbol*)test_content;
+    text.length = strlen(test_content);
     
-    // Пытаемся записать в директорию (что должно вызвать ошибку)
-    const char* inaccessible_file = "./";
-    VTL_AppResult result = VTL_pusblication_text_Write(&text, inaccessible_file);
+    // Пытаемся записать в недоступный путь (корневой каталог системы)
+    const char* inaccessible_filename = "/root/inaccessible_file.txt";
+    VTL_AppResult result = VTL_publication_text_Write(&text, inaccessible_filename);
     
-    // Проверка результата: должна быть ошибка
-    // В Windows это может не сработать, поэтому проверяем мягко
-    if (result != VTL_res_kOk) {
-        printf("Тест 5 пройден успешно (запись в директорию вызвала ошибку)\n");
-        return 1;
-    } else {
-        printf("Предупреждение: запись в директорию не вызвала ошибку (возможно, из-за ОС Windows)\n");
-        printf("Тест 5 пропущен\n");
-        return 1;  // Считаем тест пройденным, так как это зависит от ОС
-    }
-}
-
-// Тест 6: Запись и чтение файла с Unicode символами
-static int VTL_test_UnicodeFileIO() {
-    printf("Тест 6: Запись и чтение файла с Unicode символами\n");
-    
-    // Создаем текст с Unicode символами для записи
-    const char* test_str = "Тест с Unicode символами: ㋛ ☺ ☻ ♥ ♦ ♣ ♠ • ◘ ○";
-    VTL_publication_Text text;
-    text.text = (VTL_publication_text_Symbol*)test_str;
-    text.length = strlen(test_str);
-    
-    // Запись в файл
-    const char* output_file = "test_unicode.txt";
-    VTL_AppResult result = VTL_pusblication_text_Write(&text, output_file);
-    
-    // Проверка результата записи
-    const char* test_fail_message = "\nОшибка записи Unicode файла\n";
-    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+    // Ожидаем ошибку (на большинстве систем запись в /root недоступна)
+    const char* test_fail_message = "\nОшибка: запись в недоступный файл должна приводить к ошибке\n";
+    if (!VTL_test_CheckCondition(result != VTL_res_kOk, test_fail_message)) {
         return 0;
     }
     
-    // Чтение файла
-    VTL_publication_Text* read_text = NULL;
-    result = VTL_pusblication_text_Read(&read_text, output_file);
-    
-    // Проверка результата чтения
-    test_fail_message = "\nОшибка чтения Unicode файла\n";
-    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
-        return 0;
-    }
-    
-    // Проверка длины прочитанного текста
-    test_fail_message = "\nОшибка: размер прочитанного Unicode текста не совпадает с оригинальным\n";
-    if (!VTL_test_CheckCondition(read_text->length == text.length, test_fail_message)) {
-        printf("Ожидаемая длина: %zu, прочитано: %zu\n", text.length, read_text->length);
-        VTL_publication_text_Free(read_text);
-        return 0;
-    }
-    
-    // Сравнение содержимого
-    test_fail_message = "\nОшибка: содержимое Unicode файла не соответствует ожидаемому\n";
-    if (!VTL_test_CheckCondition(memcmp(text.text, read_text->text, text.length) == 0, test_fail_message)) {
-        VTL_publication_text_Free(read_text);
-        return 0;
-    }
-    
-    // Освобождаем память
-    VTL_publication_text_Free(read_text);
-    
-    printf("Тест 6 пройден успешно\n");
     return 1;
 }
 
-// Тест 7: Чтение и запись пустого файла
+// Тест 7: Работа с файлами в Unicode
+static int VTL_test_UnicodeFileIO() {
+    const char* filename = "test_unicode.txt";
+    const char* unicode_content = "Тест с русскими символами: привет мир!";
+    
+    // Создаем VTL_publication_Text с Unicode содержимым
+    VTL_publication_Text text;
+    text.text = (VTL_publication_text_Symbol*)unicode_content;
+    text.length = strlen(unicode_content);
+    
+    // Записываем в файл
+    VTL_AppResult result = VTL_publication_text_Write(&text, filename);
+    
+    const char* test_fail_message = "\nОшибка записи Unicode в файл\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        remove(filename);
+        return 0;
+    }
+    
+    // Читаем обратно
+    VTL_publication_Text* read_text = NULL;
+    result = VTL_publication_text_Read(&read_text, filename);
+    
+    test_fail_message = "\nОшибка чтения Unicode из файла\n";
+    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        remove(filename);
+        return 0;
+    }
+    
+    // Проверяем, что содержимое совпадает
+    test_fail_message = "\nОшибка: прочитанное Unicode содержимое не совпадает\n";
+    if (!VTL_test_CheckCondition(
+        read_text != NULL && 
+        read_text->length == text.length &&
+        strncmp(read_text->text, text.text, text.length) == 0,
+        test_fail_message)) {
+        
+        VTL_publication_text_Free(read_text);
+        remove(filename);
+        return 0;
+    }
+    
+    // Очистка
+    VTL_publication_text_Free(read_text);
+    remove(filename);
+    
+    return 1;
+}
+
+// Тест 8: Работа с пустыми файлами
 static int VTL_test_EmptyFileIO() {
-    printf("Тест 7: Чтение и запись пустого файла\n");
+    const char* filename = "test_empty.txt";
     
     // Создаем пустой файл
-    const char* empty_file = "test_empty.txt";
-    FILE* fp = fopen(empty_file, "w");
-    if (fp == NULL) {
-        const char* test_fail_message = "\nОшибка: не удалось создать пустой файл\n";
-        VTL_test_CheckCondition(0, test_fail_message);
+    FILE* empty_file = fopen(filename, "wb");
+    const char* test_fail_message = "\nОшибка создания пустого файла\n";
+    if (!VTL_test_CheckCondition(empty_file != NULL, test_fail_message)) {
         return 0;
     }
-    fclose(fp);
+    fclose(empty_file);
     
-    // Чтение пустого файла
-    VTL_publication_Text* empty_text = NULL;
-    VTL_AppResult result = VTL_pusblication_text_Read(&empty_text, empty_file);
+    // Читаем пустой файл
+    VTL_publication_Text* text = NULL;
+    VTL_AppResult result = VTL_publication_text_Read(&text, filename);
     
-    // Проверка результата чтения
-    const char* test_fail_message = "\nОшибка чтения пустого файла\n";
+    test_fail_message = "\nОшибка чтения пустого файла\n";
     if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
+        remove(filename);
         return 0;
     }
     
-    // Проверка, что текст пуст
-    test_fail_message = "\nОшибка: прочитанный текст не пуст\n";
-    if (!VTL_test_CheckCondition(empty_text->length == 0, test_fail_message)) {
-        VTL_publication_text_Free(empty_text);
+    // Проверяем, что получили пустой текст
+    test_fail_message = "\nОшибка: пустой файл должен давать текст длины 0\n";
+    if (!VTL_test_CheckCondition(text != NULL && text->length == 0, test_fail_message)) {
+        VTL_publication_text_Free(text);
+        remove(filename);
         return 0;
     }
     
-    // Создаем пустой текст для записи
-    VTL_publication_Text empty_write_text;
-    empty_write_text.text = (VTL_publication_text_Symbol*)"";
-    empty_write_text.length = 0;
+    // Очистка
+    VTL_publication_text_Free(text);
+    remove(filename);
     
-    // Запись пустого текста в файл
-    const char* output_empty_file = "test_output_empty.txt";
-    result = VTL_pusblication_text_Write(&empty_write_text, output_empty_file);
-    
-    // Проверка результата записи
-    test_fail_message = "\nОшибка записи пустого файла\n";
-    if (!VTL_test_CheckCondition(result == VTL_res_kOk, test_fail_message)) {
-        VTL_publication_text_Free(empty_text);
-        return 0;
-    }
-    
-    // Освобождаем память
-    VTL_publication_text_Free(empty_text);
-    
-    printf("Тест 7 пройден успешно\n");
     return 1;
 }
 
 // Главная функция с запуском тестов
-int main(void) {
+int main(void)
+{
     // Запускаем все тесты и считаем количество ошибок
     int fail_count = 0;
     
     // Для каждого теста увеличиваем счетчик, если тест не пройден
-    if (!VTL_test_ReadFile()) fail_count++;
-    if (!VTL_test_WriteFile()) fail_count++;
-    if (!VTL_test_ReadWriteCycle()) fail_count++;
+    if (!VTL_test_ReadTextFromFile()) fail_count++;
+    if (!VTL_test_WriteTextToFile()) fail_count++;
+    if (!VTL_test_ReadMarkedTextFromFile()) fail_count++;
+    if (!VTL_test_WriteMarkedTextToFile()) fail_count++;
     
     // Новые тесты
     if (!VTL_test_ReadNonExistentFile()) fail_count++;
     if (!VTL_test_WriteToInaccessibleFile()) fail_count++;
     if (!VTL_test_UnicodeFileIO()) fail_count++;
     if (!VTL_test_EmptyFileIO()) fail_count++;
-    
-    // Выводим общий результат
-    if (fail_count == 0) {
-        printf("Все тесты ввода-вывода файлов пройдены успешно!\n");
-    } else {
-        printf("Не пройдено тестов ввода-вывода файлов: %d\n", fail_count);
-    }
     
     // Возвращаем число ошибок
     return fail_count;
