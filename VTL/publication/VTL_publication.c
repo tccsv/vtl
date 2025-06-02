@@ -89,7 +89,11 @@ VTL_AppResult VTL_SheduleMarkedText(const VTL_Filename file_name, const VTL_cont
     }
 
     VTL_UserHistory history = {0};
-    VTL_user_history_text_pubication_InitSheduled(&history, NULL, file_name, flags, sheduled_time);
+    app_result = VTL_user_history_text_pubication_InitSheduled(&history, NULL, file_name, flags, sheduled_time);
+    if(app_result != VTL_res_kOk)
+    {
+        return app_result;
+    }
     
     app_result = VTL_user_history_SaveTextPublication(file_name, flags);
     if(app_result != VTL_res_kOk)
