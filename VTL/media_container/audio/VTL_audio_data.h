@@ -115,7 +115,7 @@ typedef struct _VTL_Audio
 
 
 // VTL_AppResult VTL_audio_Data_Decode(VTL_audio_Data **pp_audio_part, const VTL_audio_Params* p_params);
-VTL_AppResult VTL_audio_Data_Encode(VTL_audio_Data **pp_audio_part, const VTL_audio_Params* p_old_params, 
+VTL_AppResult VTL_audio_DataEncode(VTL_audio_Data **pp_audio_part, const VTL_audio_Params* p_old_params, 
                                         const VTL_audio_Params* p_new_params);
 
 VTL_AppResult VTL_audio_params_BitrateSet(VTL_audio_Params* p_params, const VTL_audio_Bitrate bitrate);

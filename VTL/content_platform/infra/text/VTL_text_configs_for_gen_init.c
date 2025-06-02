@@ -2,27 +2,27 @@
 
 static bool VTL_content_platform_flags_CheckRegularText(const VTL_content_platform_flags content_platform_flags)
 {
-    return VTL_CONTENT_PLATFORM_REGULAR_TEXT_MASK & content_platform_flags != 0;
+    return VTL_CONTENT_PLATFORM_REGULAR_TEXT_MASK & (content_platform_flags != 0);
 }
 
 static bool VTL_content_platform_flags_CheckHTML(const VTL_content_platform_flags content_platform_flags)
 {
-    return VTL_CONTENT_PLATFORM_HTML_MASK & content_platform_flags != 0;
+    return VTL_CONTENT_PLATFORM_HTML_MASK & (content_platform_flags != 0);
 }
 
 static bool VTL_content_platform_flags_CheckStandartMD(const VTL_content_platform_flags content_platform_flags)
 {
-    return VTL_CONTENT_PLATFORM_STANDART_MD_MASK & content_platform_flags != 0;
+    return VTL_CONTENT_PLATFORM_STANDART_MD_MASK & (content_platform_flags != 0);
 }
 
 static bool VTL_content_platform_flags_CheckTelegramMD(const VTL_content_platform_flags content_platform_flags)
 {
-    return VTL_CONTENT_PLATFORM_TELEGRAM_MD_MASK & content_platform_flags != 0;
+    return VTL_CONTENT_PLATFORM_TELEGRAM_MD_MASK & (content_platform_flags != 0);
 }
 
 static bool VTL_content_platform_flags_CheckBB(const VTL_content_platform_flags content_platform_flags)
 {
-    return VTL_CONTENT_PLATFORM_BB_MASK & content_platform_flags != 0;
+    return VTL_CONTENT_PLATFORM_BB_MASK & (content_platform_flags != 0);
 }
 
 static void VTL_content_platform_text_InitFlags(VTL_publication_marked_text_type_Flags* p_text_type_flags,
