@@ -18,7 +18,15 @@ typedef enum _VTL_AppResult
 
     VTL_res_video_fs_w_kFileIsBusyErr = 10,
 
-
+    VTL_res_ffmpeg_kFormatError,
+    VTL_res_ffmpeg_kStreamError,
+    VTL_res_ffmpeg_kCodecError,
+    VTL_res_ffmpeg_kIOError,
+    VTL_res_ffmpeg_kInitError,
+    VTL_res_ffmpeg_kMemoryError,
+    VTL_res_ffmpeg_kConversionError,
+    VTL_res_kEncoderNeedsMoreFrames,
+    VTL_res_kEncoderFlushComplete,
     
 } VTL_AppResult;
 

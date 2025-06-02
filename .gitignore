@@ -63,3 +63,6 @@ Thumbs.db
 app/
 .vscode/
 .cache/
+
+*.mp4
+*.avi
