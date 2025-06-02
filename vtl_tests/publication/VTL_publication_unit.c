@@ -4,9 +4,10 @@
 #include <VTL/VTL_content_platform_flags.h>
 #include <VTL/VTL_publication_markup_text_flags.h>
 #include <VTL/VTL_app_result.h>
+#include <stdbool.h>
 
 // Тест для VTL_SheduleMarkedText
-int test_SheduleMarkedText(void)
+bool VTL_test_SheduleMarkedText(void)
 {
     const VTL_Filename test_file = "test.txt";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -18,7 +19,7 @@ int test_SheduleMarkedText(void)
 }
 
 // Тест для VTL_PubicateMarkedText
-int test_PubicateMarkedText(void)
+bool VTL_test_PubicateMarkedText(void)
 {
     const VTL_Filename test_file = "test.txt";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -30,7 +31,7 @@ int test_PubicateMarkedText(void)
 }
 
 // Тест для VTL_SheduleText
-int test_SheduleText(void)
+bool VTL_test_SheduleText(void)
 {
     const VTL_Filename test_file = "test.txt";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -41,7 +42,7 @@ int test_SheduleText(void)
 }
 
 // Тест для VTL_PubicateText
-int test_PubicateText(void)
+bool VTL_test_PubicateText(void)
 {
     const VTL_Filename test_file = "test.txt";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -52,7 +53,7 @@ int test_PubicateText(void)
 }
 
 // Тест для VTL_ShedulePhoto
-int test_ShedulePhoto(void)
+bool VTL_test_ShedulePhoto(void)
 {
     const VTL_Filename test_file = "test.jpg";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -63,7 +64,7 @@ int test_ShedulePhoto(void)
 }
 
 // Тест для VTL_PubicatePhoto
-int test_PubicatePhoto(void)
+bool VTL_test_PubicatePhoto(void)
 {
     const VTL_Filename test_file = "test.jpg";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -74,7 +75,7 @@ int test_PubicatePhoto(void)
 }
 
 // Тест для VTL_ShedulePhotoWithMarkedText
-int test_ShedulePhotoWithMarkedText(void)
+bool VTL_test_ShedulePhotoWithMarkedText(void)
 {
     const VTL_Filename photo_file = "test.jpg";
     const VTL_Filename text_file = "test.txt";
@@ -87,7 +88,7 @@ int test_ShedulePhotoWithMarkedText(void)
 }
 
 // Тест для VTL_PubicatePhotoWithMarkedText
-int test_PubicatePhotoWithMarkedText(void)
+bool VTL_test_PubicatePhotoWithMarkedText(void)
 {
     const VTL_Filename photo_file = "test.jpg";
     const VTL_Filename text_file = "test.txt";
@@ -100,7 +101,7 @@ int test_PubicatePhotoWithMarkedText(void)
 }
 
 // Тест для VTL_ShedulePhotoWithText
-int test_ShedulePhotoWithText(void)
+bool VTL_test_ShedulePhotoWithText(void)
 {
     const VTL_Filename photo_file = "test.jpg";
     const VTL_Filename text_file = "test.txt";
@@ -112,7 +113,7 @@ int test_ShedulePhotoWithText(void)
 }
 
 // Тест для VTL_PubicatePhotoWithText
-int test_PubicatePhotoWithText(void)
+bool VTL_test_PubicatePhotoWithText(void)
 {
     const VTL_Filename photo_file = "test.jpg";
     const VTL_Filename text_file = "test.txt";
@@ -124,7 +125,7 @@ int test_PubicatePhotoWithText(void)
 }
 
 // Тест для VTL_SheduleVideo
-int test_SheduleVideo(void)
+bool VTL_test_SheduleVideo(void)
 {
     const VTL_Filename test_file = "test.mp4";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -135,7 +136,7 @@ int test_SheduleVideo(void)
 }
 
 // Тест для VTL_PubicateVideo
-int test_PubicateVideo(void)
+bool VTL_test_PubicateVideo(void)
 {
     const VTL_Filename test_file = "test.mp4";
     const VTL_content_platform_flags flags = VTL_CONTENT_PLATFORM_TG;
@@ -146,7 +147,7 @@ int test_PubicateVideo(void)
 }
 
 // Тест для VTL_SheduleVideoWithText
-int test_SheduleVideoWithText(void)
+bool VTL_test_SheduleVideoWithText(void)
 {
     const VTL_Filename video_file = "test.mp4";
     const VTL_Filename text_file = "test.txt";
@@ -158,7 +159,7 @@ int test_SheduleVideoWithText(void)
 }
 
 // Тест для VTL_PubicateVideoWithText
-int test_PubicateVideoWithText(void)
+bool VTL_test_PubicateVideoWithText(void)
 {
     const VTL_Filename video_file = "test.mp4";
     const VTL_Filename text_file = "test.txt";
@@ -170,7 +171,7 @@ int test_PubicateVideoWithText(void)
 }
 
 // Тест для VTL_SheduleVideoWithMarkedText
-int test_SheduleVideoWithMarkedText(void)
+bool VTL_test_SheduleVideoWithMarkedText(void)
 {
     const VTL_Filename video_file = "test.mp4";
     const VTL_Filename text_file = "test.txt";
@@ -183,7 +184,7 @@ int test_SheduleVideoWithMarkedText(void)
 }
 
 // Тест для VTL_PubicateVideoWithMarkedText
-int test_PubicateVideoWithMarkedText(void)
+bool VTL_test_PubicateVideoWithMarkedText(void)
 {
     const VTL_Filename video_file = "test.mp4";
     const VTL_Filename text_file = "test.txt";
@@ -196,7 +197,7 @@ int test_PubicateVideoWithMarkedText(void)
 }
 
 // Тест для VTL_SheduleVideoWithInnerSub
-int test_SheduleVideoWithInnerSub(void)
+bool VTL_test_SheduleVideoWithInnerSub(void)
 {
     const VTL_Filename video_file = "test.mp4";
     const VTL_Filename sub_file = "test.srt";
@@ -208,7 +209,7 @@ int test_SheduleVideoWithInnerSub(void)
 }
 
 // Тест для VTL_PubicateVideoWithInnerSub
-int test_PubicateVideoWithInnerSub(void)
+bool VTL_test_PubicateVideoWithInnerSub(void)
 {
     const VTL_Filename video_file = "test.mp4";
     const VTL_Filename sub_file = "test.srt";
@@ -221,27 +222,26 @@ int test_PubicateVideoWithInnerSub(void)
 
 int main(void)
 {
-    // Запускаем все тесты
-    int result = 1;
+    int fail_counter = 0;
     
-    result &= test_SheduleMarkedText();
-    result &= test_PubicateMarkedText();
-    result &= test_SheduleText();
-    result &= test_PubicateText();
-    result &= test_ShedulePhoto();
-    result &= test_PubicatePhoto();
-    result &= test_ShedulePhotoWithMarkedText();
-    result &= test_PubicatePhotoWithMarkedText();
-    result &= test_ShedulePhotoWithText();
-    result &= test_PubicatePhotoWithText();
-    result &= test_SheduleVideo();
-    result &= test_PubicateVideo();
-    result &= test_SheduleVideoWithText();
-    result &= test_PubicateVideoWithText();
-    result &= test_SheduleVideoWithMarkedText();
-    result &= test_PubicateVideoWithMarkedText();
-    result &= test_SheduleVideoWithInnerSub();
-    result &= test_PubicateVideoWithInnerSub();
+    if (!VTL_test_SheduleMarkedText()) fail_counter++;
+    if (!VTL_test_PubicateMarkedText()) fail_counter++;
+    if (!VTL_test_SheduleText()) fail_counter++;
+    if (!VTL_test_PubicateText()) fail_counter++;
+    if (!VTL_test_ShedulePhoto()) fail_counter++;
+    if (!VTL_test_PubicatePhoto()) fail_counter++;
+    if (!VTL_test_ShedulePhotoWithMarkedText()) fail_counter++;
+    if (!VTL_test_PubicatePhotoWithMarkedText()) fail_counter++;
+    if (!VTL_test_ShedulePhotoWithText()) fail_counter++;
+    if (!VTL_test_PubicatePhotoWithText()) fail_counter++;
+    if (!VTL_test_SheduleVideo()) fail_counter++;
+    if (!VTL_test_PubicateVideo()) fail_counter++;
+    if (!VTL_test_SheduleVideoWithText()) fail_counter++;
+    if (!VTL_test_PubicateVideoWithText()) fail_counter++;
+    if (!VTL_test_SheduleVideoWithMarkedText()) fail_counter++;
+    if (!VTL_test_PubicateVideoWithMarkedText()) fail_counter++;
+    if (!VTL_test_SheduleVideoWithInnerSub()) fail_counter++;
+    if (!VTL_test_PubicateVideoWithInnerSub()) fail_counter++;
     
-    return !result;
+    return fail_counter;
 } 
