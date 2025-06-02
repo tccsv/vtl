@@ -279,20 +279,26 @@ int main(void)
     int passed_tests = 0;
     const int total_tests = 7;
 
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestPlainText(),
-                                            "ToBB: Тест простого текста не пройден\n");
+    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestPlainText(), 
+                                          "ToBB: Тест простого текста не пройден\n") ? 1 : 0;
+    
     passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestRedundantTags(),
-                                            "ToBB: Тест с избыточными тегами не пройден\n");
+                                          "ToBB: Тест с избыточными тегами не пройден\n") ? 1 : 0;
+    
     passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestMixedFormatting(),
-                                            "ToBB: Тест смешанного форматирования не пройден\n");
+                                          "ToBB: Тест смешанного форматирования не пройден\n") ? 1 : 0;
+    
     passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestMultipleTags(),
-                                            "FromBB: Тест множественных тегов не пройден\n");
+                                          "FromBB: Тест множественных тегов не пройден\n") ? 1 : 0;
+    
     passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestMultipleTagsTestUnclosedTags(),
-                                            "FromBB: Тест незакрытых тегов не пройден\n");
+                                          "FromBB: Тест незакрытых тегов не пройден\n") ? 1 : 0;
+    
     passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestSingleTag(),
-                                            "FromBB: Тест одним тегом не пройден\n");
+                                          "FromBB: Тест одним тегом не пройден\n") ? 1 : 0;
+    
     passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestEmptyString(),
-                                            "FromBB: Тест с пустой строкой не пройден\n");
+                                          "FromBB: Тест с пустой строкой не пройден\n") ? 1 : 0;
 
     // Вывод сводной информации
     if (passed_tests == total_tests)
