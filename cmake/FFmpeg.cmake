@@ -1,122 +1,71 @@
-include(FetchContent)
 include(ExternalProject)
 
+# Настройки для FFmpeg
+set(FFMPEG_VERSION "n7.0.2")
+set(FFMPEG_SOURCE_DIR "${CMAKE_BINARY_DIR}/ffmpeg-src")
+set(FFMPEG_BUILD_DIR "${CMAKE_BINARY_DIR}/ffmpeg-build")
+set(FFMPEG_INSTALL_DIR "${CMAKE_BINARY_DIR}/ffmpeg-install")
+
+# Дополнительные настройки сборки
 set(FFMPEG_BUILD_SHARED_LIBS ON CACHE BOOL "Build FFmpeg as shared libraries")
 set(FFMPEG_ENABLE_GPL ON CACHE BOOL "Enable GPL code")
 set(FFMPEG_ENABLE_NONFREE ON CACHE BOOL "Enable nonfree code")
 
-set(FFMPEG_INSTALL_DIR ${CMAKE_BINARY_DIR}/ffmpeg_install)
+# Находим системные библиотеки FFmpeg
+find_library(AVCODEC_LIBRARY avcodec)
+find_library(AVFORMAT_LIBRARY avformat)
+find_library(AVUTIL_LIBRARY avutil)
+find_library(SWSCALE_LIBRARY swscale)
+find_library(AVFILTER_LIBRARY avfilter)
 
-# Создаем файл с хешем конфигурации
-set(FFMPEG_CONFIG_HASH_FILE ${CMAKE_BINARY_DIR}/ffmpeg_config_hash.txt)
-set(FFMPEG_CONFIGURE_OPTIONS
-    --enable-static
-    --disable-shared
-    --enable-pic
-    --disable-doc
-    --disable-programs
-    --enable-avdevice
-    --enable-swscale
-    --enable-avfilter
-    --enable-network
-    --enable-protocol=file
-    --enable-decoder=h264
-    --enable-decoder=hevc
-    --enable-decoder=mpeg4
-    --enable-demuxer=mov
-    --enable-demuxer=matroska
-    --enable-encoder=png
-    --enable-encoder=jpeg
-    --enable-encoder=mjpeg
-    --enable-muxer=image2
-    --enable-muxer=matroska
-    --enable-filter=scale
-    --enable-filter=crop
-    --enable-filter=rotate
-    --enable-filter=transpose
-    --enable-filter=format
-    --enable-filter=colorchannelmixer
-    --enable-filter=convolution
-    --enable-filter=edgedetect
-    --enable-filter=boxblur
-    --enable-filter=gblur
-    --enable-filter=unsharp
-    --enable-filter=hue
-    --enable-filter=transpose
-    --enable-swscale
-    --enable-swscale-alpha
-    --prefix=${FFMPEG_INSTALL_DIR}
-)
-
-if(FFMPEG_ENABLE_GPL)
-    list(APPEND FFMPEG_CONFIGURE_OPTIONS --enable-gpl)
+# Проверяем, что все библиотеки найдены
+if(NOT AVCODEC_LIBRARY OR NOT AVFORMAT_LIBRARY OR NOT AVUTIL_LIBRARY OR NOT SWSCALE_LIBRARY OR NOT AVFILTER_LIBRARY)
+    message(FATAL_ERROR "Не удалось найти необходимые библиотеки FFmpeg. Установите ffmpeg: sudo pacman -S ffmpeg")
 endif()
 
-if(FFMPEG_ENABLE_NONFREE)
-    list(APPEND FFMPEG_CONFIGURE_OPTIONS --enable-nonfree)
-endif()
+# Создаем импортированные библиотеки
+add_library(avcodec SHARED IMPORTED)
+add_library(avformat SHARED IMPORTED)
+add_library(avutil SHARED IMPORTED)
+add_library(swscale SHARED IMPORTED)
+add_library(avfilter SHARED IMPORTED)
 
-# Создаем команду для генерации хеша конфигурации
-set(FFMPEG_CONFIG_HASH_CMD
-    COMMAND ${CMAKE_COMMAND} -E echo "${FFMPEG_CONFIGURE_OPTIONS}" | md5sum > ${FFMPEG_CONFIG_HASH_FILE}
+# Устанавливаем свойства импортированных библиотек
+set_target_properties(avcodec PROPERTIES
+    IMPORTED_LOCATION ${AVCODEC_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES /usr/include
 )
 
-# Проверяем, нужно ли пересобирать FFmpeg
-set(FFMPEG_NEEDS_REBUILD FALSE)
-if(EXISTS ${FFMPEG_CONFIG_HASH_FILE})
-    file(READ ${FFMPEG_CONFIG_HASH_FILE} OLD_HASH)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E echo "${FFMPEG_CONFIGURE_OPTIONS}" | md5sum
-        OUTPUT_VARIABLE NEW_HASH
-    )
-    if(NOT "${OLD_HASH}" STREQUAL "${NEW_HASH}")
-        set(FFMPEG_NEEDS_REBUILD TRUE)
-    endif()
-else()
-    set(FFMPEG_NEEDS_REBUILD TRUE)
-endif()
-
-if(FFMPEG_NEEDS_REBUILD)
-    ExternalProject_Add(ffmpeg_ext
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg
-        CONFIGURE_COMMAND ${FFMPEG_CONFIG_HASH_CMD}
-            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/configure ${FFMPEG_CONFIGURE_OPTIONS}
-        BUILD_COMMAND make -j${CMAKE_BUILD_PARALLEL_LEVEL}
-        INSTALL_COMMAND make install
-        BUILD_IN_SOURCE 1
-    )
-else()
-    # Если пересборка не нужна, просто создаем пустую цель
-    add_custom_target(ffmpeg_ext)
-endif()
-
-# Set FFmpeg include directories
-set(FFMPEG_INCLUDE_DIRS
-    ${FFMPEG_INSTALL_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libavcodec
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libavformat
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libavutil
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libswresample
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libswscale
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libavfilter
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ffmpeg/libavdevice
+set_target_properties(avformat PROPERTIES
+    IMPORTED_LOCATION ${AVFORMAT_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES /usr/include
 )
 
-# Set FFmpeg libraries
-set(FFMPEG_LIBRARIES
-    ${FFMPEG_INSTALL_DIR}/lib/libavdevice.a
-    ${FFMPEG_INSTALL_DIR}/lib/libavfilter.a
-    ${FFMPEG_INSTALL_DIR}/lib/libavformat.a
-    ${FFMPEG_INSTALL_DIR}/lib/libavcodec.a
-    ${FFMPEG_INSTALL_DIR}/lib/libswscale.a
-    ${FFMPEG_INSTALL_DIR}/lib/libswresample.a
-    ${FFMPEG_INSTALL_DIR}/lib/libavutil.a
+set_target_properties(avutil PROPERTIES
+    IMPORTED_LOCATION ${AVUTIL_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES /usr/include
 )
 
+set_target_properties(swscale PROPERTIES
+    IMPORTED_LOCATION ${SWSCALE_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES /usr/include
+)
+
+set_target_properties(avfilter PROPERTIES
+    IMPORTED_LOCATION ${AVFILTER_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES /usr/include
+)
+
+# Создаем интерфейсную библиотеку для FFmpeg
 add_library(ffmpeg INTERFACE)
 target_include_directories(ffmpeg INTERFACE ${FFMPEG_INCLUDE_DIRS})
-target_link_libraries(ffmpeg INTERFACE ${FFMPEG_LIBRARIES})
+target_link_libraries(ffmpeg INTERFACE
+    avcodec
+    avformat
+    avutil
+    swscale
+    avfilter
+)
 
 # Кроссплатформенная линковка для ffmpeg INTERFACE
 if(APPLE)
