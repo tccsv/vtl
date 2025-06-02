@@ -276,39 +276,28 @@ bool VTL_tests_bbcode_FromBBTestEmptyString()
 
 int main(void)
 {
-    int passed_tests = 0;
-    const int total_tests = 7;
+    int failed_tests  = 0;
 
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestPlainText(), 
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestPlainText(), 
                                           "ToBB: Тест простого текста не пройден\n") ? 1 : 0;
     
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestRedundantTags(),
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestRedundantTags(),
                                           "ToBB: Тест с избыточными тегами не пройден\n") ? 1 : 0;
     
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestMixedFormatting(),
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_ToBBTestMixedFormatting(),
                                           "ToBB: Тест смешанного форматирования не пройден\n") ? 1 : 0;
     
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestMultipleTags(),
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestMultipleTags(),
                                           "FromBB: Тест множественных тегов не пройден\n") ? 1 : 0;
     
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestMultipleTagsTestUnclosedTags(),
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestMultipleTagsTestUnclosedTags(),
                                           "FromBB: Тест незакрытых тегов не пройден\n") ? 1 : 0;
     
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestSingleTag(),
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestSingleTag(),
                                           "FromBB: Тест одним тегом не пройден\n") ? 1 : 0;
     
-    passed_tests += VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestEmptyString(),
+    failed_tests += !VTL_test_CheckCondition(VTL_tests_bbcode_FromBBTestEmptyString(),
                                           "FromBB: Тест с пустой строкой не пройден\n") ? 1 : 0;
 
-    // Вывод сводной информации
-    if (passed_tests == total_tests)
-    {
-        VTL_Print("Все тесты успешно пройдены (%d/%d)\n", passed_tests, total_tests);
-        return 0;
-    }
-    else
-    {
-        VTL_Print("Пройдено %d из %d тестов\n", passed_tests, total_tests);
-        return 1;
-    }
+    return failed_tests;
 }
