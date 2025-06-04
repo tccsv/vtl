@@ -1,0 +1,36 @@
+# CMake generated Testfile for 
+# Source directory: C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text
+# Build directory: C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/text
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+if(CTEST_CONFIGURATION_TYPE MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+  add_test([=[VTL_tests_text_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/Debug/VTL_tests_Text.exe")
+  set_tests_properties([=[VTL_tests_text_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;23;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
+  add_test([=[VTL_tests_text_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/Release/VTL_tests_Text.exe")
+  set_tests_properties([=[VTL_tests_text_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;23;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
+  add_test([=[VTL_tests_text_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/MinSizeRel/VTL_tests_Text.exe")
+  set_tests_properties([=[VTL_tests_text_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;23;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
+  add_test([=[VTL_tests_text_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/RelWithDebInfo/VTL_tests_Text.exe")
+  set_tests_properties([=[VTL_tests_text_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;23;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+else()
+  add_test([=[VTL_tests_text_Run]=] NOT_AVAILABLE)
+endif()
+if(CTEST_CONFIGURATION_TYPE MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+  add_test([=[VTL_tests_text_IO_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/Debug/VTL_tests_Text_IO.exe")
+  set_tests_properties([=[VTL_tests_text_IO_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;42;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
+  add_test([=[VTL_tests_text_IO_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/Release/VTL_tests_Text_IO.exe")
+  set_tests_properties([=[VTL_tests_text_IO_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;42;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
+  add_test([=[VTL_tests_text_IO_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/MinSizeRel/VTL_tests_Text_IO.exe")
+  set_tests_properties([=[VTL_tests_text_IO_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;42;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
+  add_test([=[VTL_tests_text_IO_Run]=] "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/app/RelWithDebInfo/VTL_tests_Text_IO.exe")
+  set_tests_properties([=[VTL_tests_text_IO_Run]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;42;add_test;C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/vtl_tests/text/CMakeLists.txt;0;")
+else()
+  add_test([=[VTL_tests_text_IO_Run]=] NOT_AVAILABLE)
+endif()

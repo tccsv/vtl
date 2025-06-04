@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\utils\VTL_time.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\utils\VTL_file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\utils\VTL_encryptor.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\utils\log\VTL_console_log.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\utils\db\VTL_db_credentals.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\user\VTL_user_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\user\history\VTL_user_history_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\user\history\db\VTL_user_history_Save.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\publication\text\VTL_publication_text_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\publication\text\VTL_publication_text_op.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\publication\text\VTL_publication_markup_text_flags_check.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\publication\text\infra\VTL_publication_text_read.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\publication\text\infra\VTL_publication_text_write.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\tg\VTL_content_platform_tg_net.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\VTL_content_platform_publication.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\publication\VTL_publication.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\media_container\audio\VTL_audio_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\media_container\audio\infra\VTL_audio_read.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\media_container\audio\infra\VTL_audio_write.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\media_container\video\VTL_video_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\tg\media_container_params\VTL_content_platform_tg_params_audio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\tg\media_container_params\VTL_content_platform_tg_params_sub.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\tg\media_container_params\VTL_content_platform_tg_params_video.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\infra\text\VTL_text_configs_for_gen_init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\VTL_content_platform_flags_check.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\infra\audio\VTL_audio_gen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\infra\audio\VTL_audio_configs_for_gen_init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\VTL\content_platform\infra\text\VTL_publication_text_gen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\kl3wd\OneDrive\Рабочий стол\VTL_Tim_build\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7ECB6A66-E674-3731-ACA4-8872AB8B8A4A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -18,6 +18,9 @@ VTL_AppResult VTL_publication_marked_text_Init(VTL_publication_MarkedText **pp_m
                                                 const VTL_publication_Text *p_src_text, 
                                                 const VTL_publication_marked_text_MarkupType src_markup_type);
 
+VTL_AppResult VTL_publication_text_InitFromHTML(VTL_publication_MarkedText** pp_publication, 
+                                               const VTL_publication_Text* p_src_text);
+
 VTL_AppResult VTL_publication_marked_text_TransformToRegularText(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text);
 
@@ -33,6 +36,12 @@ VTL_AppResult VTL_publication_marked_text_TransformToHTML(VTL_publication_Text**
 
 VTL_AppResult VTL_publication_marked_text_TransformToBB(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text);
+
+// Функция для освобождения памяти размеченного текста
+VTL_AppResult VTL_publication_marked_text_Free(VTL_publication_MarkedText* p_marked_text);
+
+// Функция для освобождения памяти обычного текста
+VTL_AppResult VTL_publication_text_Free(VTL_publication_Text* p_text);
 
 #ifdef __cplusplus
 }

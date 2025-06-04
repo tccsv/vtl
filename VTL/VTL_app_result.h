@@ -11,8 +11,13 @@ extern "C"
 typedef enum _VTL_AppResult 
 {
     VTL_res_kOk = 0,
-    
-    
+
+    // --- Коды ошибок для текстовой логики ---
+    VTL_res_kInvalidParamErr = -1,
+    VTL_res_kMemAllocErr     = -2,
+    VTL_res_kFileOpenErr     = -3,    // <-- добавить
+       VTL_res_kFileWriteErr    = -4,    // <-- добавить
+    // --- Существующие коды ошибок ---
     VTL_res_video_fs_r_kMissingFileErr = 1,
     VTL_res_video_fs_r_kFileIsBusyErr,
 

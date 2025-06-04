@@ -1,0 +1,10 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/kl3wd/OneDrive/\u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u043e\u043b/VTL_Tim_build/build/cmake_install.cmake",
+		"C:/Users/kl3wd/OneDrive/\u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u043e\u043b/VTL_Tim_build/build/vtl_tests/cmake_install.cmake",
+		"C:/Users/kl3wd/OneDrive/\u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u043e\u043b/VTL_Tim_build/build/vtl_tests/audio/cmake_install.cmake",
+		"C:/Users/kl3wd/OneDrive/\u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u043e\u043b/VTL_Tim_build/build/vtl_tests/text/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

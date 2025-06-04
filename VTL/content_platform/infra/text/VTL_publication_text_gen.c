@@ -5,7 +5,7 @@ static VTL_AppResult VTL_publication_marked_text_GenStandartMDFile(const VTL_pub
 {
     VTL_publication_Text* p_out_text;
     VTL_publication_marked_text_TransformToStandartMD(&p_out_text, p_src_marked_text);
-    VTL_pusblication_text_Write(p_out_text, out_file_name);
+    VTL_publication_text_Write(p_out_text, out_file_name);
     return VTL_res_kOk;
 }
 
@@ -14,7 +14,7 @@ static VTL_AppResult VTL_publication_marked_text_GenTelegramMDFile(const VTL_pub
 {
     VTL_publication_Text* p_out_text;
     VTL_publication_marked_text_TransformToTelegramMD(&p_out_text, p_src_marked_text);
-    VTL_pusblication_text_Write(p_out_text, out_file_name);
+    VTL_publication_text_Write(p_out_text, out_file_name);
     return VTL_res_kOk;
 }
 
@@ -23,7 +23,7 @@ static VTL_AppResult VTL_publication_marked_text_GenHTMLFile(const VTL_publicati
 {
     VTL_publication_Text* p_out_text;
     VTL_publication_marked_text_TransformToHTML(&p_out_text, p_src_marked_text);
-    VTL_pusblication_text_Write(p_out_text, out_file_name);
+    VTL_publication_text_Write(p_out_text, out_file_name);
     return VTL_res_kOk;
 }
 
@@ -33,7 +33,7 @@ static VTL_AppResult VTL_publication_marked_text_GenRegularTextFile(
 {
     VTL_publication_Text* p_out_text;
     VTL_publication_marked_text_TransformToRegularText(&p_out_text, p_src_marked_text);
-    VTL_pusblication_text_Write(p_out_text, out_file_name);
+    VTL_publication_text_Write(p_out_text, out_file_name);
     return VTL_res_kOk;
 }
 
@@ -42,7 +42,7 @@ static VTL_AppResult VTL_publication_marked_text_GenBBFile(const VTL_publication
 {
     VTL_publication_Text* p_out_text;
     VTL_publication_marked_text_TransformToStandartMD(&p_out_text, p_src_marked_text);
-    VTL_pusblication_text_Write(p_out_text, out_file_name);
+    VTL_publication_text_Write(p_out_text, out_file_name);
     return VTL_res_kOk;
 }
 
@@ -217,7 +217,7 @@ VTL_AppResult VTL_publication_marked_text_GenFiles(const VTL_Filename src_file_n
     VTL_publication_MarkedText* p_marked_text;
     VTL_publication_Text* p_src_text;
     VTL_AppResult app_result = VTL_res_kOk;
-    app_result = VTL_pusblication_text_Read(&p_src_text, src_file_name);
+    app_result = VTL_publication_text_Read(&p_src_text, src_file_name);
     VTL_publication_marked_text_Init(&p_marked_text, p_src_text, src_markup_type);
     VTL_publication_marked_text_CheckAndGen(p_marked_text, src_file_name, src_markup_type, p_configs);
     return VTL_res_kOk;

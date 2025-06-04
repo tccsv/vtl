@@ -1,0 +1,11 @@
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/CMakeFiles/VTL.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/CMakeFiles/libVTL.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/CMakeFiles/RUN_TESTS.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/CMakeFiles/RUN_TESTS.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/audio/CMakeFiles/VTL_tests_Audio.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/audio/CMakeFiles/RUN_TESTS.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/text/CMakeFiles/VTL_tests_Text.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/text/CMakeFiles/VTL_tests_Text_IO.dir
+C:/Users/kl3wd/OneDrive/Рабочий стол/VTL_Tim_build/build/vtl_tests/text/CMakeFiles/RUN_TESTS.dir

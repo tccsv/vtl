@@ -1,0 +1,35 @@
+Start testing: Jun 04 23:43 RTZ 2 (зима)
+----------------------------------------------------------
+Test not available without configuration.  (Missing "-C <config>"?)
+1/2 Testing: VTL_tests_text_Run
+1/2 Test: VTL_tests_text_Run
+Command: "NOT_AVAILABLE"
+Directory: C:/Users/kl3wd/OneDrive/Р Р°Р±РѕС‡РёР№ СЃС‚РѕР»/VTL_Tim_build/build/vtl_tests/text
+"VTL_tests_text_Run" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"VTL_tests_text_Run" end time: Jun 04 23:43 RTZ 2 (зима)
+"VTL_tests_text_Run" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Test not available without configuration.  (Missing "-C <config>"?)
+2/2 Testing: VTL_tests_text_IO_Run
+2/2 Test: VTL_tests_text_IO_Run
+Command: "NOT_AVAILABLE"
+Directory: C:/Users/kl3wd/OneDrive/Р Р°Р±РѕС‡РёР№ СЃС‚РѕР»/VTL_Tim_build/build/vtl_tests/text
+"VTL_tests_text_IO_Run" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"VTL_tests_text_IO_Run" end time: Jun 04 23:43 RTZ 2 (зима)
+"VTL_tests_text_IO_Run" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jun 04 23:43 RTZ 2 (зима)

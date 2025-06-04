@@ -106,6 +106,14 @@ add_executable(${AppName}
 # target_link_libraries(${AppName} PRIVATE openssl)
 target_include_directories(${AppName} PRIVATE ${CMAKE_SOURCE_DIR})
 
+add_library(libVTL STATIC
+        ${VTL_CMAKE_UTILS_SRC_FILES}
+        ${VTL_CMAKE_USER_SRC_FILES}
+        ${VTL_CMAKE_PUBLICATION_SRC_FILES}
+        ${VTL_CMAKE_MEDIA_CONTAINER_SRC_FILES}
+        ${VTL_CMAKE_CONTENT_PLATFORM_SRC_FILES}
+)
+target_include_directories(libVTL PUBLIC ${CMAKE_SOURCE_DIR})
 
 
 enable_testing()

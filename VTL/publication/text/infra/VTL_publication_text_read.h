@@ -10,7 +10,7 @@ extern "C"
 #include <VTL/utils/VTL_file.h>
 #include <VTL/VTL_app_result.h>
 
-VTL_AppResult VTL_pusblication_text_Read(VTL_publication_Text** pp_text, const VTL_Filename file_name);
+VTL_AppResult VTL_publication_text_Read(VTL_publication_Text** pp_text, const VTL_Filename file_name);
 
 
 #ifdef __cplusplus

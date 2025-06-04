@@ -1,0 +1,5 @@
+VTL_tests_text_Run 0 0
+VTL_tests_text_IO_Run 0 0
+---
+VTL_tests_text_Run
+VTL_tests_text_IO_Run
