@@ -29,6 +29,8 @@ set(VTL_CMAKE_UTILS_SRC_FILES
 
     VTL/utils/db/VTL_db_credentals.c
 
+    VTL/utils/curl/VTL_http_client.c
+
     )
 
 set(VTL_CMAKE_USER_SRC_FILES
