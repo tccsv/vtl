@@ -5,10 +5,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
-/**
- * Инициализирует граф фильтров FFmpeg.
- * Добавлена строгая проверка на NULL и безопасная очистка временных структур AVFilterInOut.
- */
+
+// Инициализация графа фильтров FFmpeg
 static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AVFrame* input_frame)
 {
     if (!ctx || !ctx->current_frame || !filter_descr) return VTL_res_kInvalidParamErr;
@@ -22,7 +20,7 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
     ctx->filter_graph = avfilter_graph_alloc();
     if (!ctx->filter_graph) return VTL_res_kMemAllocErr;
 
-    // Подготовка параметров входного буфера (формат кадра, размеры, timebase)
+    // Подготовка параметров входного буфера
     snprintf(args, sizeof(args),
              "video_size=%dx%d:pix_fmt=%d:time_base=1/25:pixel_aspect=1/1",
              ctx->current_frame->width, ctx->current_frame->height, ctx->current_frame->format);
@@ -70,7 +68,7 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
         goto cleanup;
     }
 
-    // Парсим строку фильтра (например, "boxblur=5:1")
+    // Парс строки фильтра
     if (avfilter_graph_parse_ptr(ctx->filter_graph, filter_descr, &inputs, &outputs, NULL) < 0) {
         ret = VTL_res_ffmpeg_kInitError;
         goto cleanup;
@@ -83,7 +81,7 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
     }
 
     cleanup:
-    // Освобождаем временные структуры (важно: avfilter_inout_free корректно обрабатывает NULL)
+    // Освобождаем временные структуры
     avfilter_inout_free(&inputs);
     avfilter_inout_free(&outputs);
     if (ret < 0 && ctx->filter_graph) {
@@ -105,13 +103,13 @@ void VTL_img_context_Cleanup(VTL_ImageContext* ctx)
 {
     if (!ctx) return;
 
-    // Закрываем все контексты FFmpeg и освобождаем кадры
+    // Закрываем все контексты и освобождаем кадры
     if (ctx->format_ctx) avformat_close_input(&ctx->format_ctx);
     if (ctx->codec_ctx) avcodec_free_context(&ctx->codec_ctx);
     if (ctx->filter_graph) avfilter_graph_free(&ctx->filter_graph);
     if (ctx->sws_ctx) sws_freeContext(ctx->sws_ctx);
 
-    // ДОБАВЛЕНО: Освобождение кадра, чтобы избежать утечек памяти
+    // Освобождение кадра, чтобы избежать утечек памяти
     if (ctx->current_frame) av_frame_free(&ctx->current_frame);
 
     free(ctx);
@@ -132,16 +130,15 @@ VTL_AppResult VTL_img_LoadImage(const char* input_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
-    // Открываем файл
     if (avformat_open_input(&ctx->format_ctx, input_path, NULL, NULL) < 0) {
-        fprintf(stderr, "Failed to open input file: %s\n", input_path);
+        printf("Failed to open file: %s\n", input_path);
         ret = VTL_res_ffmpeg_kIOError;
         goto cleanup;
     }
 
     // Читаем информацию о потоках
     if (avformat_find_stream_info(ctx->format_ctx, NULL) < 0) {
-        fprintf(stderr, "Failed to find stream info\n");
+        printf("Failed to find stream info\n");
         ret = VTL_res_ffmpeg_kFormatError;
         goto cleanup;
     }
@@ -149,7 +146,7 @@ VTL_AppResult VTL_img_LoadImage(const char* input_path, VTL_ImageContext* ctx)
     // Ищем видеопоток
     video_stream_index = av_find_best_stream(ctx->format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, &decoder, 0);
     if (video_stream_index < 0) {
-        fprintf(stderr, "Failed to find video stream\n");
+        printf("Failed to find video stream\n");
         ret = VTL_res_ffmpeg_kStreamError;
         goto cleanup;
     }
@@ -161,11 +158,13 @@ VTL_AppResult VTL_img_LoadImage(const char* input_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
+    // Инициализация кодека
     if (avcodec_parameters_to_context(ctx->codec_ctx, ctx->format_ctx->streams[video_stream_index]->codecpar) < 0) {
         ret = VTL_res_ffmpeg_kCodecError;
         goto cleanup;
     }
 
+    // Открытие кодека
     if (avcodec_open2(ctx->codec_ctx, decoder, NULL) < 0) {
         ret = VTL_res_ffmpeg_kCodecError;
         goto cleanup;
@@ -177,7 +176,7 @@ VTL_AppResult VTL_img_LoadImage(const char* input_path, VTL_ImageContext* ctx)
             if (avcodec_send_packet(ctx->codec_ctx, packet) == 0) {
                 if (avcodec_receive_frame(ctx->codec_ctx, frame) == 0) {
 
-                    // ДОБАВЛЕНО: Безопасное освобождение старого кадра при повторной загрузке
+                    // Безопасное освобождение старого кадра при повторной загрузке
                     if (ctx->current_frame) {
                         av_frame_free(&ctx->current_frame);
                     }
@@ -223,7 +222,7 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
-    // Подготовка RGB кадра (PNG требует RGB или RGBA)
+    // Подготовка RGB кадра
     rgb_frame->format = AV_PIX_FMT_RGB24;
     rgb_frame->width = ctx->current_frame->width;
     rgb_frame->height = ctx->current_frame->height;
@@ -232,7 +231,7 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
-    // Инициализация контекста конвертации (SWS)
+    // Инициализация контекста конвертации
     sws_ctx = sws_getContext(
             ctx->current_frame->width, ctx->current_frame->height, ctx->current_frame->format,
             rgb_frame->width, rgb_frame->height, rgb_frame->format,
@@ -243,7 +242,7 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
-    // Выполняем конвертацию цветового пространства
+    // Конвертация цветового пространства
     if (sws_scale(sws_ctx,
                   (const uint8_t * const*)ctx->current_frame->data, ctx->current_frame->linesize,
                   0, ctx->current_frame->height,
@@ -252,19 +251,20 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
-    // Создаем контекст вывода
+    // Контекст вывода
     if (avformat_alloc_output_context2(&out_fmt_ctx, NULL, NULL, output_path) < 0) {
         ret = VTL_res_ffmpeg_kFormatError;
         goto cleanup;
     }
 
-    // Настраиваем энкодер PNG
+    // Настройка энкодера PNG
     const AVCodec *encoder = avcodec_find_encoder(AV_CODEC_ID_PNG);
     if (!encoder) {
         ret = VTL_res_ffmpeg_kCodecError;
         goto cleanup;
     }
 
+    // Выделение контекста энкодера
     enc_ctx = avcodec_alloc_context3(encoder);
     if (!enc_ctx) {
         ret = VTL_res_kMemAllocErr;
@@ -276,10 +276,12 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
     enc_ctx->pix_fmt = rgb_frame->format;
     enc_ctx->time_base = (AVRational){1, 25};
 
+    // Проверка заголовка
     if (out_fmt_ctx->oformat->flags & AVFMT_GLOBALHEADER) {
         enc_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
+    // Открытие энкодера
     if (avcodec_open2(enc_ctx, encoder, NULL) < 0) {
         ret = VTL_res_ffmpeg_kCodecError;
         goto cleanup;
@@ -300,7 +302,7 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
 
     // Открываем файл для записи
     if (avio_open(&out_fmt_ctx->pb, output_path, AVIO_FLAG_WRITE) < 0) {
-        fprintf(stderr, "Failed to open output file: %s\n", output_path);
+        printf("Failed to open output file: %s\n", output_path);
         ret = VTL_res_ffmpeg_kIOError;
         goto cleanup;
     }
@@ -318,13 +320,17 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
         goto cleanup;
     }
 
+    // Достаём и записываем пакеты
     while (avcodec_receive_packet(enc_ctx, packet) == 0) {
+        // Привязываем пакет к потоку
         packet->stream_index = out_stream->index;
+        // Сортируем пакеты по времени
         if (av_interleaved_write_frame(out_fmt_ctx, packet) < 0) {
             ret = VTL_res_ffmpeg_kIOError;
-            av_packet_unref(packet);
+            av_packet_unref(packet); // Очищаем пакет перед выходом
             goto cleanup;
         }
+        // Уменьшаем счетчик ссылок, освобождаем данные
         av_packet_unref(packet);
     }
 
@@ -335,7 +341,7 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
     ret = VTL_res_kOk;
 
     cleanup:
-    // ИСПРАВЛЕНО: Гарантированная очистка всех ресурсов при любом исходе
+    // Гарантированная очистка всех ресурсов
     if (enc_ctx) avcodec_free_context(&enc_ctx);
     if (out_fmt_ctx) {
         if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb); // Закрытие файлового дескриптора
@@ -389,12 +395,11 @@ VTL_AppResult VTL_img_ApplyFilter(VTL_ImageContext* ctx, const VTL_ImageFilter* 
 VTL_AppResult VTL_img_InitGPU(void)
 {
     AVBufferRef* hw_device_ctx = NULL;
-    // Пробуем CUDA, затем OpenCL
     int err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_CUDA, NULL, NULL, 0);
     if (err < 0) {
         err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_OPENCL, NULL, NULL, 0);
         if (err < 0) {
-            fprintf(stderr, "Failed to create hardware device context\n");
+            printf("Failed to create hardware device context\n");
             return VTL_res_ffmpeg_kInitError;
         }
     }
@@ -408,9 +413,8 @@ void VTL_img_CleanupGPU(void)
     // Очистка GPU ресурсов (в данной реализации автоматическая через граф фильтров)
 }
 
-/**
- * Структура для передачи данных в поток обработки изображения.
- */
+
+// Структура для передачи данных в поток обработки изображения
 typedef struct {
     const char* input_path;
     const VTL_ImageFilter* filter;
@@ -418,14 +422,13 @@ typedef struct {
     VTL_AppResult result;
 } VTL_BatchTask;
 
-/**
- * Воркер-функция для потока. Выполняет полный цикл обработки одного изображения.
- */
+
+// Функция для потока выполняет полный цикл обработки изображения
 static void* vtl_img_worker(void* arg)
 {
     VTL_BatchTask* task = (VTL_BatchTask*)arg;
 
-    // Каждому потоку нужен свой независимый контекст FFmpeg
+    // Каждому потоку создаётся свой  контекст FFmpeg
     VTL_ImageContext* ctx = VTL_img_context_Init();
     if (!ctx) {
         task->result = VTL_res_kMemAllocErr;
@@ -435,7 +438,7 @@ static void* vtl_img_worker(void* arg)
     // Загрузка
     task->result = VTL_img_LoadImage(task->input_path, ctx);
 
-    // Фильтрация (если задана)
+    // Фильтрация
     if (task->result == VTL_res_kOk && task->filter) {
         task->result = VTL_img_ApplyFilter(ctx, task->filter);
     }
@@ -453,7 +456,7 @@ VTL_AppResult VTL_img_ProcessBatch(const char** input_paths, const VTL_ImageFilt
 {
     if (!input_paths || !output_paths || count <= 0) return VTL_res_kInvalidParamErr;
 
-    // Создаем массив задач и потоков
+    // Иассив задач и потоков
     VTL_BatchTask* tasks = (VTL_BatchTask*)malloc(sizeof(VTL_BatchTask) * count);
     pthread_t* threads = (pthread_t*)malloc(sizeof(pthread_t) * count);
 
@@ -463,7 +466,7 @@ VTL_AppResult VTL_img_ProcessBatch(const char** input_paths, const VTL_ImageFilt
         return VTL_res_kMemAllocErr;
     }
 
-    // Запускаем потоки
+    // Запуск потоков
     for (int i = 0; i < count; i++) {
         tasks[i].input_path = input_paths[i];
         tasks[i].filter = (filters) ? filters[i] : NULL;
@@ -471,7 +474,7 @@ VTL_AppResult VTL_img_ProcessBatch(const char** input_paths, const VTL_ImageFilt
         tasks[i].result = VTL_res_kOk;
 
         if (pthread_create(&threads[i], NULL, vtl_img_worker, &tasks[i]) != 0) {
-            fprintf(stderr, "Failed to create thread for image %d\n", i);
+            printf("Failed to create thread %d\n", i);
             tasks[i].result = VTL_res_kErr;
         }
     }
@@ -480,7 +483,7 @@ VTL_AppResult VTL_img_ProcessBatch(const char** input_paths, const VTL_ImageFilt
     for (int i = 0; i < count; i++) {
         pthread_join(threads[i], NULL);
         if (tasks[i].result != VTL_res_kOk) {
-            printf("Image failed with fail %d\n", i);
+            printf("Image failed %d\n", i);
         }
     }
 
