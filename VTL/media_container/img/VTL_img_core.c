@@ -53,7 +53,7 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
     }
 
     // Связываем входы/выходы графа
-    outputs->name = av_strdup("in");
+    outputs->name = av_strdup("in"); // Выход графа подключен к фильтру
     outputs->filter_ctx = ctx->buffersrc_ctx;
     outputs->pad_idx = 0;
     outputs->next = NULL;
@@ -81,7 +81,6 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
     }
 
     cleanup:
-    // Освобождаем временные структуры
     avfilter_inout_free(&inputs);
     avfilter_inout_free(&outputs);
     if (ret < 0 && ctx->filter_graph) {
@@ -473,6 +472,7 @@ VTL_AppResult VTL_img_ProcessBatch(const char** input_paths, const VTL_ImageFilt
         tasks[i].output_path = output_paths[i];
         tasks[i].result = VTL_res_kOk;
 
+        // Создаём поток, который выполнит функцию vtl_img_worker
         if (pthread_create(&threads[i], NULL, vtl_img_worker, &tasks[i]) != 0) {
             printf("Failed to create thread %d\n", i);
             tasks[i].result = VTL_res_kErr;

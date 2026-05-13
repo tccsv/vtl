@@ -6,9 +6,6 @@
 
 int main(void)
 {
-    char cwd[1024];
-    getcwd(cwd, sizeof(cwd));
-    printf("Current working dir: %s\n", cwd);
     const char* input_path  = "./test_images/test2-1.jpg";
     const char* output_path = "./test_images/test2-1_output.jpg";
 
