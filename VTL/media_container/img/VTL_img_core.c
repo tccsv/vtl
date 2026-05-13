@@ -379,7 +379,7 @@ VTL_AppResult VTL_img_ApplyFilter(VTL_ImageContext* ctx, const VTL_ImageFilter* 
         goto cleanup;
     }
 
-    // ДОБАВЛЕНО: Безопасное обновление текущего кадра через ссылки FFmpeg
+    // Обновление текущего кадра
     av_frame_unref(ctx->current_frame);
     if (av_frame_ref(ctx->current_frame, filt_frame) < 0) {
         ret = VTL_res_ffmpeg_kMemoryError;
@@ -422,7 +422,7 @@ typedef struct {
 } VTL_BatchTask;
 
 
-// Функция для потока выполняет полный цикл обработки изображения
+// Функция для потока выполняет цикл обработки изображения
 static void* vtl_img_worker(void* arg)
 {
     VTL_BatchTask* task = (VTL_BatchTask*)arg;
