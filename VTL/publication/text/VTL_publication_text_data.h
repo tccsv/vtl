@@ -30,6 +30,10 @@ typedef enum _VTL_publication_marked_text_modification_Shift
 #define VTL_TEXT_MODIFICATION_BOLD 1 << 0
 #define VTL_TEXT_MODIFICATION_ITALIC 1 << 1
 #define VTL_TEXT_MODIFICATION_STRIKETHROUGH 1 << 2
+// Private flag: the part's text is a URL; emitters that support hyperlinks
+// render it as an anchor (e.g. Telegram <a href="URL">ref</a>). Plain renderers
+// fall back to emitting nothing (drop the URL bytes).
+#define VTL_TEXT_MODIFICATION_LINK_URL (1 << 8)
 
 typedef int VTL_publication_text_modification_Flags;
 
