@@ -29,27 +29,47 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
     const AVFilter *buffersink = avfilter_get_by_name("buffersink");
 
     if (!buffersrc || !buffersink) {
-        ret = VTL_res_ffmpeg_kInitError;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_ffmpeg_kInitError;
     }
 
     // Создаем входной и выходной фильтры
     if (avfilter_graph_create_filter(&ctx->buffersrc_ctx, buffersrc, "in", args, NULL, ctx->filter_graph) < 0) {
-        ret = VTL_res_ffmpeg_kInitError;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_ffmpeg_kInitError;
     }
 
     if (avfilter_graph_create_filter(&ctx->buffersink_ctx, buffersink, "out", NULL, NULL, ctx->filter_graph) < 0) {
-        ret = VTL_res_ffmpeg_kInitError;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_ffmpeg_kInitError;
     }
 
     // Выделяем структуры для парсинга строки фильтров
     inputs = avfilter_inout_alloc();
     outputs = avfilter_inout_alloc();
     if (!inputs || !outputs) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_kMemAllocErr;
     }
 
     // Связываем входы/выходы графа
@@ -64,29 +84,38 @@ static int init_filter_graph(VTL_ImageContext* ctx, const char* filter_descr, AV
     inputs->next = NULL;
 
     if (!inputs->name || !outputs->name) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_kMemAllocErr;
     }
 
     // Парс строки фильтра
     if (avfilter_graph_parse_ptr(ctx->filter_graph, filter_descr, &inputs, &outputs, NULL) < 0) {
-        ret = VTL_res_ffmpeg_kInitError;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_ffmpeg_kInitError;
     }
 
     // Проверяем валидность графа
     if (avfilter_graph_config(ctx->filter_graph, NULL) < 0) {
-        ret = VTL_res_ffmpeg_kInitError;
-        goto cleanup;
+        avfilter_inout_free(&inputs);
+        avfilter_inout_free(&outputs);
+        if (ret < 0 && ctx->filter_graph) {
+            avfilter_graph_free(&ctx->filter_graph);
+        }
+
+        return VTL_res_ffmpeg_kInitError;
     }
 
-    cleanup:
-    avfilter_inout_free(&inputs);
-    avfilter_inout_free(&outputs);
-    if (ret < 0 && ctx->filter_graph) {
-        avfilter_graph_free(&ctx->filter_graph);
-    }
-    return ret;
+    return VTL_res_kOk;
 }
 
 VTL_ImageContext* VTL_img_context_Init(void)
@@ -125,48 +154,63 @@ VTL_AppResult VTL_img_LoadImage(const char* input_path, VTL_ImageContext* ctx)
     int ret = VTL_res_kErr;
 
     if (!packet || !frame) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_kMemAllocErr;
     }
 
     if (avformat_open_input(&ctx->format_ctx, input_path, NULL, NULL) < 0) {
         printf("Failed to open file: %s\n", input_path);
-        ret = VTL_res_ffmpeg_kIOError;
-        goto cleanup;
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kIOError;
     }
 
     // Читаем информацию о потоках
     if (avformat_find_stream_info(ctx->format_ctx, NULL) < 0) {
         printf("Failed to find stream info\n");
-        ret = VTL_res_ffmpeg_kFormatError;
-        goto cleanup;
+
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kFormatError;
     }
 
     // Ищем видеопоток
     video_stream_index = av_find_best_stream(ctx->format_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, &decoder, 0);
     if (video_stream_index < 0) {
         printf("Failed to find video stream\n");
-        ret = VTL_res_ffmpeg_kStreamError;
-        goto cleanup;
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kStreamError;
     }
 
     // Инициализируем декодер
     ctx->codec_ctx = avcodec_alloc_context3(decoder);
     if (!ctx->codec_ctx) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_kMemAllocErr;
     }
 
     // Инициализация кодека
     if (avcodec_parameters_to_context(ctx->codec_ctx, ctx->format_ctx->streams[video_stream_index]->codecpar) < 0) {
-        ret = VTL_res_ffmpeg_kCodecError;
-        goto cleanup;
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kCodecError;
     }
 
     // Открытие кодека
     if (avcodec_open2(ctx->codec_ctx, decoder, NULL) < 0) {
-        ret = VTL_res_ffmpeg_kCodecError;
-        goto cleanup;
+        av_frame_free(&frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kCodecError;
     }
 
     // Читаем пакеты до первого видеокадра
@@ -197,9 +241,6 @@ VTL_AppResult VTL_img_LoadImage(const char* input_path, VTL_ImageContext* ctx)
         av_packet_unref(packet);
     }
 
-    cleanup:
-    av_frame_free(&frame);
-    av_packet_free(&packet);
     return ret;
 }
 
@@ -213,12 +254,19 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
     AVPacket *packet = av_packet_alloc();
     AVFrame *rgb_frame = av_frame_alloc();
     struct SwsContext *sws_ctx = NULL;
-    int ret = VTL_res_kErr;
     int header_written = 0;
 
     if (!packet || !rgb_frame) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_kMemAllocErr;
     }
 
     // Подготовка RGB кадра
@@ -226,8 +274,16 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
     rgb_frame->width = ctx->current_frame->width;
     rgb_frame->height = ctx->current_frame->height;
     if (av_frame_get_buffer(rgb_frame, 0) < 0) {
-        ret = VTL_res_ffmpeg_kMemoryError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kMemoryError;
     }
 
     // Инициализация контекста конвертации
@@ -237,8 +293,16 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
             SWS_BILINEAR, NULL, NULL, NULL
     );
     if (!sws_ctx) {
-        ret = VTL_res_ffmpeg_kConversionError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kConversionError;
     }
 
     // Конвертация цветового пространства
@@ -246,28 +310,60 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
                   (const uint8_t * const*)ctx->current_frame->data, ctx->current_frame->linesize,
                   0, ctx->current_frame->height,
                   rgb_frame->data, rgb_frame->linesize) < 0) {
-        ret = VTL_res_ffmpeg_kConversionError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kConversionError;
     }
 
     // Контекст вывода
     if (avformat_alloc_output_context2(&out_fmt_ctx, NULL, NULL, output_path) < 0) {
-        ret = VTL_res_ffmpeg_kFormatError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kFormatError;
     }
 
     // Настройка энкодера PNG
     const AVCodec *encoder = avcodec_find_encoder(AV_CODEC_ID_PNG);
     if (!encoder) {
-        ret = VTL_res_ffmpeg_kCodecError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kCodecError;
     }
 
     // Выделение контекста энкодера
     enc_ctx = avcodec_alloc_context3(encoder);
     if (!enc_ctx) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_kMemAllocErr;
     }
 
     enc_ctx->height = rgb_frame->height;
@@ -282,41 +378,89 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
 
     // Открытие энкодера
     if (avcodec_open2(enc_ctx, encoder, NULL) < 0) {
-        ret = VTL_res_ffmpeg_kCodecError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kCodecError;
     }
 
     // Добавляем поток в файл
     out_stream = avformat_new_stream(out_fmt_ctx, NULL);
     if (!out_stream) {
-        ret = VTL_res_kMemAllocErr;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_kMemAllocErr;
     }
 
     if (avcodec_parameters_from_context(out_stream->codecpar, enc_ctx) < 0) {
-        ret = VTL_res_ffmpeg_kCodecError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kCodecError;
     }
     out_stream->time_base = enc_ctx->time_base;
 
     // Открываем файл для записи
     if (avio_open(&out_fmt_ctx->pb, output_path, AVIO_FLAG_WRITE) < 0) {
         printf("Failed to open output file: %s\n", output_path);
-        ret = VTL_res_ffmpeg_kIOError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kIOError;
     }
 
     // Записываем заголовок
     if (avformat_write_header(out_fmt_ctx, NULL) < 0) {
-        ret = VTL_res_ffmpeg_kFormatError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kFormatError;
     }
     header_written = 1;
 
     // Кодируем кадр
     if (avcodec_send_frame(enc_ctx, rgb_frame) < 0) {
-        ret = VTL_res_ffmpeg_kCodecError;
-        goto cleanup;
+        if (enc_ctx) avcodec_free_context(&enc_ctx);
+        if (out_fmt_ctx) {
+            if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+            avformat_free_context(out_fmt_ctx);
+        }
+        if (sws_ctx) sws_freeContext(sws_ctx);
+        av_frame_free(&rgb_frame);
+        av_packet_free(&packet);
+
+        return VTL_res_ffmpeg_kFormatError;
     }
 
     // Достаём и записываем пакеты
@@ -325,9 +469,18 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
         packet->stream_index = out_stream->index;
         // Сортируем пакеты по времени
         if (av_interleaved_write_frame(out_fmt_ctx, packet) < 0) {
-            ret = VTL_res_ffmpeg_kIOError;
             av_packet_unref(packet); // Очищаем пакет перед выходом
-            goto cleanup;
+
+            if (enc_ctx) avcodec_free_context(&enc_ctx);
+            if (out_fmt_ctx) {
+                if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb);
+                avformat_free_context(out_fmt_ctx);
+            }
+            if (sws_ctx) sws_freeContext(sws_ctx);
+            av_frame_free(&rgb_frame);
+            av_packet_free(&packet);
+
+            return VTL_res_ffmpeg_kIOError;
         }
         // Уменьшаем счетчик ссылок, освобождаем данные
         av_packet_unref(packet);
@@ -337,19 +490,8 @@ VTL_AppResult VTL_img_SaveImage(const char* output_path, VTL_ImageContext* ctx)
     if (header_written) {
         av_write_trailer(out_fmt_ctx);
     }
-    ret = VTL_res_kOk;
 
-    cleanup:
-    // Гарантированная очистка всех ресурсов
-    if (enc_ctx) avcodec_free_context(&enc_ctx);
-    if (out_fmt_ctx) {
-        if (out_fmt_ctx->pb) avio_closep(&out_fmt_ctx->pb); // Закрытие файлового дескриптора
-        avformat_free_context(out_fmt_ctx);
-    }
-    if (sws_ctx) sws_freeContext(sws_ctx);
-    av_frame_free(&rgb_frame);
-    av_packet_free(&packet);
-    return ret;
+    return VTL_res_kOk;
 }
 
 VTL_AppResult VTL_img_ApplyFilter(VTL_ImageContext* ctx, const VTL_ImageFilter* filter)
@@ -359,36 +501,36 @@ VTL_AppResult VTL_img_ApplyFilter(VTL_ImageContext* ctx, const VTL_ImageFilter* 
     AVFrame *filt_frame = av_frame_alloc();
     if (!filt_frame) return VTL_res_kMemAllocErr;
 
-    int ret = VTL_res_kOk;
-
     // Инициализация графа фильтров
     if (init_filter_graph(ctx, filter->filter_desc, ctx->current_frame) < 0) {
-        ret = VTL_res_ffmpeg_kInitError;
-        goto cleanup;
+        av_frame_free(&filt_frame);
+
+        return VTL_res_ffmpeg_kInitError;
     }
 
     // Отправляем кадр в фильтр
     if (av_buffersrc_add_frame(ctx->buffersrc_ctx, ctx->current_frame) < 0) {
-        ret = VTL_res_ffmpeg_kIOError;
-        goto cleanup;
+        av_frame_free(&filt_frame);
+
+        return VTL_res_ffmpeg_kIOError;
     }
 
     // Получаем отфильтрованный кадр
     if (av_buffersink_get_frame(ctx->buffersink_ctx, filt_frame) < 0) {
-        ret = VTL_res_ffmpeg_kIOError;
-        goto cleanup;
+        av_frame_free(&filt_frame);
+
+        return VTL_res_ffmpeg_kIOError;
     }
 
     // Обновление текущего кадра
-    av_frame_unref(ctx->current_frame);
+    av_frame_unref(ctx->current_frame);  // Удаление старых данных
     if (av_frame_ref(ctx->current_frame, filt_frame) < 0) {
-        ret = VTL_res_ffmpeg_kMemoryError;
-        goto cleanup;
+        av_frame_free(&filt_frame);
+
+        return VTL_res_ffmpeg_kMemoryError;
     }
 
-    cleanup:
-    av_frame_free(&filt_frame);
-    return ret;
+    return VTL_res_kOk;
 }
 
 VTL_AppResult VTL_img_InitGPU(void)
@@ -457,6 +599,7 @@ VTL_AppResult VTL_img_ProcessBatch(const char** input_paths, const VTL_ImageFilt
 
     // Иассив задач и потоков
     VTL_BatchTask* tasks = (VTL_BatchTask*)malloc(sizeof(VTL_BatchTask) * count);
+
     pthread_t* threads = (pthread_t*)malloc(sizeof(pthread_t) * count);
 
     if (!tasks || !threads) {
