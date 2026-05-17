@@ -5,6 +5,8 @@ add_library(VTL_content_platform OBJECT
     tg/media_container_params/VTL_content_platform_tg_params_audio.c
     tg/media_container_params/VTL_content_platform_tg_params_sub.c
     tg/media_container_params/VTL_content_platform_tg_params_video.c
+    vimeo/VTL_content_platform_vimeo_net.c
+    vimeo/media_container_params/VTL_content_platform_vimeo_params_video.c
     reddit/VTL_content_platform_reddit_net.c
     infra/audio/VTL_audio_gen.c
     infra/audio/VTL_audio_configs_for_gen_init.c
