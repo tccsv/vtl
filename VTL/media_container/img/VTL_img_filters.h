@@ -6,7 +6,7 @@ extern "C"
 {
 #endif
 
-#include <VTL/media_container/img/VTL_img_data.h>
+#include "VTL_img_data.h"
 
 extern const VTL_ImageFilter VTL_img_filter_blur;
 extern const VTL_ImageFilter VTL_img_filter_gaussian_blur;

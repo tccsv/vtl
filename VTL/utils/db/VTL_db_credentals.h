@@ -1,8 +1,6 @@
 #ifndef _VTL_DB_CREDENTALS_H
 #define _VTL_DB_CREDENTALS_H
 
-#include <stdio.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -13,11 +11,7 @@ extern "C"
 
 typedef struct _VTL_db_Credentals
 {
-    char* host;
-    char* port;
-    char* user;
-    char* password;
-    char* dbname;
+    int x;
 } VTL_db_Credentals;
 
 

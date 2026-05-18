@@ -28,7 +28,7 @@ typedef struct _VTL_ImageContext {
     AVFilterContext* buffersrc_ctx;
     AVFilterContext* buffersink_ctx;
     AVFilterGraph* filter_graph;
-    struct SwsContext* sws_ctx;
+    SwsContext* sws_ctx;
     AVFrame* current_frame;  // Текущий кадр изображения
 } VTL_ImageContext;
 

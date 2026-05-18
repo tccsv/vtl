@@ -6,7 +6,7 @@ extern "C"
 {
 #endif
 
-#include <VTL/media_container/img/VTL_img_data.h>
+#include "VTL_img_data.h"
 
 VTL_ImageContext* VTL_img_context_Init(void);
 void VTL_img_context_Cleanup(VTL_ImageContext* ctx);

@@ -1,18 +1,7 @@
-#include <VTL/media_container/img/VTL_img_utils.h>
+#include "VTL_img_utils.h"
 #include <sys/stat.h>
-#include <string.h>
-
-#ifdef _WIN32
-#include <io.h>
-#define access _access
-#define F_OK 0
-#else
 #include <unistd.h>
-#endif
-
-#ifdef _MSC_VER
-#define strcasecmp _stricmp
-#endif
+#include <string.h>
 
 static const struct {
     const char* format;

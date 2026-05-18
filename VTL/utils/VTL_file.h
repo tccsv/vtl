@@ -13,7 +13,7 @@ extern "C"
 #include <stddef.h>
 #include <stdbool.h>
 
-#define __STDC_WANT_LIB_EXT1__ 1
+#define __STDC_WANT_LIB_EXT1__
 #include <stdio.h>
 
 typedef VTL_StandartString VTL_Filename;
