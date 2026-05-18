@@ -1,4 +1,4 @@
-#include <VTL/media_container/img/VTL_img_filters.h>
+#include "VTL_img_filters.h"
 #include <string.h>
 
 static int apply_blur(AVFrame* frame) 

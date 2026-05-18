@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 
+#include <VTL/media_container/VTL_video_sub_burner.h>
 #include <VTL/media_container/VTL_media_container_data.h>
 #include <VTL/media_container/audio/VTL_audio.h>
 #include <VTL/media_container/sub/VTL_sub.h>
