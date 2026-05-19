@@ -20,7 +20,7 @@ typedef VTL_StandartString VTL_EncryptedString;
 
 
 void VTL_Encrypt(const VTL_StandartString src_string, VTL_EncryptedString encrypted_string);
-
+void VTL_Decrypt(const VTL_EncryptedString src, VTL_StandartString dest);
 
 
 #ifdef __cplusplus
