@@ -4,6 +4,11 @@
 #include <stdio.h>  // Для sscanf, snprintf
 #include <ctype.h>  // Для isspace
 
+#ifdef _MSC_VER
+#define strtok_r strtok_s
+#define strcasecmp _stricmp
+#endif
+
 // Прототипы вспомогательных функций времени
 static VTL_AppResult VTL_sub_ParseSrtVttTime(const char* time_str, double* out_time);
 static VTL_AppResult VTL_sub_ParseAssTime(const char* time_str, double* out_time);

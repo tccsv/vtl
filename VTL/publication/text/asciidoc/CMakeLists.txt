@@ -1,7 +1,7 @@
 # Самодостаточная под-библиотека модуля publication.
 # Не зависит ни от utils, ни от curl/openssl/postgres/ffmpeg.
-# Используется при VTL_MINIMAL_BUILD=ON для сборки на чистой ОС.
-# Работает на Linux, macOS, Windows (MinGW). MSVC не поддерживается — pthread'а нет.
+# Работает на Linux, macOS, Windows (MSVC) — threading через собственный
+# wrapper (WinAPI на Windows, pthread на остальных).
 
 add_library(VTL_asciidoc STATIC
     VTL_publication_text_op_asciidoc.c
@@ -17,12 +17,12 @@ add_library(VTL_asciidoc STATIC
 
 target_include_directories(VTL_asciidoc PUBLIC ${CMAKE_SOURCE_DIR})
 
-# Threads::Threads — кросс-платформенный pthread:
-#   - Linux/macOS → -lpthread
-#   - Windows MinGW → -lpthread (winpthreads)
-#   - Windows MSVC → fail (тут pthread'а нет, нужна другая реализация)
-find_package(Threads REQUIRED)
-target_link_libraries(VTL_asciidoc PUBLIC Threads::Threads)
+# Threads — нужны только под UNIX (-lpthread). Под Windows compat.h уходит
+# в WinAPI-ветку (CreateThread/WaitForSingleObject), pthread-линковка не нужна.
+if(UNIX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(VTL_asciidoc PUBLIC Threads::Threads)
+endif()
 
 set_target_properties(VTL_asciidoc PROPERTIES
     C_STANDARD 11

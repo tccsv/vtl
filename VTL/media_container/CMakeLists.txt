@@ -13,7 +13,7 @@ add_library(VTL_media_container OBJECT
     sub/infra/VTL_sub_write.c
 )
 
-# VTL_sub_burn.c использует POSIX realpath() — на MinGW/MSVC её нет.
+# VTL_sub_burn.c использует POSIX realpath() — под Windows её нет.
 # Подключать только под UNIX, пока исходник не сделают кросс-платформенным.
 if(NOT WIN32)
     target_sources(VTL_media_container PRIVATE sub/VTL_sub_burn.c)

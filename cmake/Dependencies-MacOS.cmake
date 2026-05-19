@@ -36,22 +36,6 @@ set_target_properties(CURL::libcurl PROPERTIES
 )
 
 # ============================================================
-# OpenSSL
-# ============================================================
-add_library(OpenSSL::Crypto SHARED IMPORTED)
-set_target_properties(OpenSSL::Crypto PROPERTIES
-    IMPORTED_LOCATION "${MAC_LIB}/libcrypto.3.dylib"
-    INTERFACE_INCLUDE_DIRECTORIES "${MAC_INC}"
-)
-
-add_library(OpenSSL::SSL SHARED IMPORTED)
-set_target_properties(OpenSSL::SSL PROPERTIES
-    IMPORTED_LOCATION "${MAC_LIB}/libssl.3.dylib"
-    INTERFACE_INCLUDE_DIRECTORIES "${MAC_INC}"
-    INTERFACE_LINK_LIBRARIES OpenSSL::Crypto
-)
-
-# ============================================================
 # libpq (PostgreSQL)
 # ============================================================
 add_library(PostgreSQL::PostgreSQL SHARED IMPORTED)
@@ -109,4 +93,4 @@ endforeach()
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH "@executable_path/../external_libs/macos/lib")
 
-message(STATUS "VTL macOS: ${MAC_DIR} (FFmpeg 8, curl 4, openssl 3, libpq 5)")
+message(STATUS "VTL macOS: ${MAC_DIR} (FFmpeg 8, curl 4, libpq 5)")

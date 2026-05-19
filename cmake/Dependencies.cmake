@@ -3,9 +3,9 @@
 # Цель: проект собирается на чистой ОС без apt/brew/vcpkg.
 #
 # Поддерживаемые платформы:
-#   Linux x86_64      → external_libs/{ffmpeg,curl,openssl,postgresql}/lib/*.so
-#   Windows x86_64    → external_libs/windows/{bin,lib,include}/  (MinGW)
-#   macOS             → пока не поддерживается (нет .dylib в репо)
+#   Linux x86_64      → external_libs/{ffmpeg,curl,postgresql}/lib/*.so
+#   Windows x86_64    → собирается из external_sources/ под MSVC
+#   macOS arm64       → external_libs/macos/lib/*.dylib
 
 set(EXTERNAL_LIBS_DIR "${CMAKE_SOURCE_DIR}/external_libs")
 
@@ -22,7 +22,7 @@ endif()
 if(NOT (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
     message(FATAL_ERROR
         "external_libs/ под ${CMAKE_SYSTEM_NAME} пока нет. "
-        "Поддерживается Linux x86_64, Windows x86_64 (MinGW), macOS arm64.")
+        "Поддерживается Linux x86_64, Windows x86_64 (MSVC), macOS arm64.")
 endif()
 
 # ============================================================
@@ -84,28 +84,6 @@ set_target_properties(CURL::libcurl PROPERTIES
 )
 
 # ============================================================
-# OpenSSL (libssl + libcrypto)
-# ============================================================
-set(OPENSSL_LIB_DIR "${EXTERNAL_LIBS_DIR}/openssl/lib")
-set(OPENSSL_INC_DIR "${EXTERNAL_LIBS_DIR}/openssl/include")
-
-add_library(OpenSSL::Crypto SHARED IMPORTED)
-set_target_properties(OpenSSL::Crypto PROPERTIES
-    IMPORTED_LOCATION "${OPENSSL_LIB_DIR}/libcrypto.so.3"
-    INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INC_DIR}"
-)
-
-add_library(OpenSSL::SSL SHARED IMPORTED)
-set_target_properties(OpenSSL::SSL PROPERTIES
-    IMPORTED_LOCATION "${OPENSSL_LIB_DIR}/libssl.so.3"
-    INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INC_DIR}"
-)
-# libssl всегда тянет libcrypto
-set_target_properties(OpenSSL::SSL PROPERTIES
-    INTERFACE_LINK_LIBRARIES OpenSSL::Crypto
-)
-
-# ============================================================
 # libpq (PostgreSQL)
 # ============================================================
 set(PG_LIB_DIR "${EXTERNAL_LIBS_DIR}/postgresql/lib")
@@ -146,8 +124,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH
     "\$ORIGIN/../external_libs/ffmpeg/lib"
     "\$ORIGIN/../external_libs/curl/lib"
-    "\$ORIGIN/../external_libs/openssl/lib"
     "\$ORIGIN/../external_libs/postgresql/lib"
 )
 
-message(STATUS "VTL dependencies: external_libs/ (FFmpeg 60, curl 4, openssl 3, libpq 5)")
+message(STATUS "VTL dependencies: external_libs/ (FFmpeg 60, curl 4, libpq 5)")

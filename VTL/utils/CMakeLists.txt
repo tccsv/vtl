@@ -16,8 +16,6 @@ target_link_libraries(VTL_utils
     PUBLIC
         parson
         CURL::libcurl
-        OpenSSL::SSL
-        OpenSSL::Crypto
         PostgreSQL::PostgreSQL
 )
 

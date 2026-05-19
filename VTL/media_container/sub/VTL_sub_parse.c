@@ -4,6 +4,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#endif
+
 // Получить расширение файла
 static const char* VTL_sub_GetFileExt(const char* filename) {
     const char* dot = strrchr(filename, '.');

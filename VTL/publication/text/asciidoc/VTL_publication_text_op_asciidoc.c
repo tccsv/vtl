@@ -6,8 +6,7 @@
 #endif
 
 #include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc.h>
-
-#include <time.h>
+#include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_compat.h>
 
 
 VTL_AppResult VTL_asciidoc_ParseTextSequential(const VTL_publication_Text* src,
@@ -47,9 +46,7 @@ VTL_AppResult VTL_asciidoc_ParseTextParallel(const VTL_publication_Text* src,
 // clock() показывает CPU-time и при N потоках выглядел бы как N-кратный рост, а не как ускорение
 static double VTL_asciidoc_now_seconds(void)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+    return vtl_monotonic_seconds();
 }
 
 double VTL_asciidoc_BenchSequential(const VTL_publication_Text* src, size_t iterations)

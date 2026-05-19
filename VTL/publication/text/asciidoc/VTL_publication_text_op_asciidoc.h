@@ -15,7 +15,7 @@ extern "C"
 
 // разбираем 15 видов разметки AsciiDoc и кладём в MarkedText
 // Sequential — все сканеры в одном потоке
-// Parallel — каждый сканер в своём потоке через pthread
+// Parallel — каждый сканер в своём потоке (pthread / WinAPI)
 //           буферы у всех свои, поэтому локов нет
 VTL_AppResult VTL_asciidoc_ParseTextSequential(const VTL_publication_Text* src,
                                                 VTL_publication_MarkedText** out);

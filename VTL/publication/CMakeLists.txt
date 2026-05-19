@@ -17,7 +17,7 @@ add_library(VTL_publication OBJECT
     text/mediawiki/VTL_publication_text_op_mediawiki_convert.c
 )
 
-if(UNIX OR MINGW)
+if(UNIX)
     target_link_libraries(VTL_publication PUBLIC pthread)
 endif()
 

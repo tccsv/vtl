@@ -8,9 +8,10 @@
 #include <VTL/publication/text/asciidoc/infra/VTL_publication_text_op_asciidoc_load.h>
 #include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc.h>
 
+#include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_compat.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 
 // читает файл целиком в malloc-буфер
@@ -100,7 +101,7 @@ VTL_AppResult VTL_asciidoc_ParseFileBatchParallel(const char* const* paths,
     if (!paths || !out_marked) return VTL_res_kInvalidParamErr;
     if (paths_count == 0) return VTL_res_kOk;
 
-    pthread_t* threads = (pthread_t*)malloc(paths_count * sizeof(pthread_t));
+    vtl_thread_t* threads = (vtl_thread_t*)malloc(paths_count * sizeof(vtl_thread_t));
     VTL_asciidoc_BatchWorkerCtx* ctxs = (VTL_asciidoc_BatchWorkerCtx*)malloc(
         paths_count * sizeof(VTL_asciidoc_BatchWorkerCtx));
     if (!threads || !ctxs) {
@@ -118,8 +119,8 @@ VTL_AppResult VTL_asciidoc_ParseFileBatchParallel(const char* const* paths,
     // поток на файл
     size_t spawned = 0;
     for (size_t i = 0; i < paths_count; ++i) {
-        if (pthread_create(&threads[i], NULL,
-                           VTL_asciidoc_batch_worker, &ctxs[i]) != 0) {
+        if (vtl_thread_create(&threads[i],
+                              VTL_asciidoc_batch_worker, &ctxs[i]) != 0) {
             break;
         }
         ++spawned;
@@ -128,7 +129,7 @@ VTL_AppResult VTL_asciidoc_ParseFileBatchParallel(const char* const* paths,
         VTL_asciidoc_batch_worker(&ctxs[i]);
     }
     for (size_t i = 0; i < spawned; ++i) {
-        pthread_join(threads[i], NULL);
+        vtl_thread_join(threads[i]);
     }
 
     // вернём последний неуспех если что-то упало

@@ -7,11 +7,11 @@
 
 #include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_scan.h>
 #include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_convert.h>
+#include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_compat.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <pthread.h>
 
 
 // сколько типов разметки умеем — столько же потоков в параллельном режиме
@@ -539,7 +539,7 @@ VTL_AppResult VTL_asciidoc_ParseDocumentParallel(const VTL_publication_Text* src
     // у каждого сканера свой буфер и свой контекст — ради этого и нет локов
     VTL_asciidoc_MarkerList partial_lists[VTL_ASCIIDOC_SCANNER_COUNT];
     VTL_asciidoc_ScanContext contexts[VTL_ASCIIDOC_SCANNER_COUNT];
-    pthread_t threads[VTL_ASCIIDOC_SCANNER_COUNT];
+    vtl_thread_t threads[VTL_ASCIIDOC_SCANNER_COUNT];
 
     for (size_t i = 0; i < VTL_ASCIIDOC_SCANNER_COUNT; ++i) {
         VTL_asciidoc_MarkerListInit(&partial_lists[i]);
@@ -548,11 +548,11 @@ VTL_AppResult VTL_asciidoc_ParseDocumentParallel(const VTL_publication_Text* src
         contexts[i].out = &partial_lists[i];
     }
 
-    // если pthread_create упадёт на полпути — оставшиеся гоним последовательно
+    // если создание потока упадёт на полпути — оставшиеся гоним последовательно
     size_t spawned = 0;
     for (size_t i = 0; i < VTL_ASCIIDOC_SCANNER_COUNT; ++i) {
-        if (pthread_create(&threads[i], NULL,
-                           VTL_asciidoc_all_scanners[i], &contexts[i]) != 0) {
+        if (vtl_thread_create(&threads[i],
+                              VTL_asciidoc_all_scanners[i], &contexts[i]) != 0) {
             break;
         }
         ++spawned;
@@ -564,8 +564,7 @@ VTL_AppResult VTL_asciidoc_ParseDocumentParallel(const VTL_publication_Text* src
     // ждём все запущенные потоки, собираем их коды возврата
     void* worst = NULL;
     for (size_t i = 0; i < spawned; ++i) {
-        void* res = NULL;
-        pthread_join(threads[i], &res);
+        void* res = vtl_thread_join(threads[i]);
         if (res != NULL) worst = res;
     }
 

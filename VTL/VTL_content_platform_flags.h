@@ -11,23 +11,25 @@ extern "C"
 
 typedef enum _VTL_ContentPlatform
 {
-        VTL_content_platform_kW = 0,
-        VTL_content_platform_kTG,
-        VTL_content_platform_kYT,
-        VTL_content_platform_kBiliBili,
-        VTL_content_platform_kR,
-        VTL_content_platform_kVK,
-        VTL_content_platform_kTiktok,
+    VTL_content_platform_kW = 0,
+    VTL_content_platform_kTG,
+    VTL_content_platform_kYT,
+    VTL_content_platform_kBiliBili,
+    VTL_content_platform_kR,
+    VTL_content_platform_kVK,
+    VTL_content_platform_kTiktok,
+    VTL_content_platform_kVimeo,
 
-        //VTL_content_platform_kX необходимо оставлять всегда последним
-        VTL_content_platform_kX
+    //VTL_content_platform_kX необходимо оставлять всегда последним
+    VTL_content_platform_kX
 
 } VTL_ContentPlatform;
 
-#define VTL_CONTENT_PLATFORM_DEFAULT !UINT_LEAST32_MAX 
+#define VTL_CONTENT_PLATFORM_DEFAULT !UINT_LEAST32_MAX
 #define VTL_CONTENT_PLATFORM_W ( 1 << VTL_content_platform_kW)
 #define VTL_CONTENT_PLATFORM_R ( 1 << VTL_content_platform_kR)
 #define VTL_CONTENT_PLATFORM_TG (1 << VTL_content_platform_kTG)
+#define VTL_CONTENT_PLATFORM_VIMEO  (1 << VTL_content_platform_kVimeo)
 #define VTL_CONTENT_PLATFORM_YT (1 << VTL_content_platform_kYT)
 #define VTL_CONTENT_PLATFORM_BILIBILI (1 << VTL_content_platform_kBiliBili)
 #define VTL_CONTENT_PLATFORM_X (1 << VTL_content_platform_kX)
@@ -36,12 +38,12 @@ typedef enum _VTL_ContentPlatform
 #define VTL_CONTENT_PLATFORM_VK (1 << VTL_content_platform_kX)
 #define VTL_CONTENT_PLATFORM_MAX_NUM (VTL_content_platform_kX + 1)
 
-#define VTL_CONTENT_PLATFORM_ALL UINT_LEAST32_MAX 
- 
+#define VTL_CONTENT_PLATFORM_ALL UINT_LEAST32_MAX
+
 #define VTL_CONTENT_PLATFORM_VIDEO_W_TEXT (VTL_CONTENT_PLATFORM_W & VTL_CONTENT_PLATFORM_TG & VTL_CONTENT_PLATFORM_YT \
         & VTL_CONTENT_PLATFORM_BILIBILI & VTL_CONTENT_PLATFORM_X & VTL_CONTENT_PLATFORM_VK)
 
-#define VTL_CONTENT_PLATFORM_VIDEO_TEXT (VTL_CONTENT_PLATFORM_W & VTL_CONTENT_PLATFORM_TG & VTL_CONTENT_PLATFORM_YT) 
+#define VTL_CONTENT_PLATFORM_VIDEO_TEXT (VTL_CONTENT_PLATFORM_W & VTL_CONTENT_PLATFORM_TG & VTL_CONTENT_PLATFORM_YT)
 
 typedef int VTL_content_platform_flags;
 

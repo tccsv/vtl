@@ -9,6 +9,7 @@ app/
 CLAUDE.md
 .idea/
 .vscode/
+.vs/
 cmake-build-*/
 __pycache__/
 

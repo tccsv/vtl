@@ -11,7 +11,7 @@ extern "C"
 #include <VTL/VTL_app_result.h>
 
 
-// сигнатура void*(void*) — чтобы отдавать прямо в pthread_create
+// сигнатура void*(void*) — совместима с pthread / WinAPI thread-обёрткой
 // возвращает NULL при успехе, (void*)1 при OOM
 
 // inline-разметка
