@@ -1,0 +1,130 @@
+@startuml VTL_text_module_overview
+' === Импорт в drawio ===
+' Arrange -> Insert -> Advanced -> PlantUML
+' либо Extras -> Edit Diagram (вкладка PlantUML)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+title VTL/publication/text — общая архитектура модуля
+
+' ===== ЯДРО ДАННЫХ =====
+package "Core data\n(VTL_publication_text_data.h)" as core {
+
+    class VTL_publication_Text <<struct>> {
+        + text : VTL_publication_text_Symbol*
+        + length : size_t
+    }
+
+    class VTL_publication_marked_text_Part <<struct>> {
+        + text : VTL_publication_text_Symbol*
+        + length : size_t
+        + type : VTL_publication_text_modification_Flags
+    }
+
+    class VTL_publication_MarkedText <<struct, alias of Block>> {
+        + parts : VTL_publication_marked_text_Part*
+        + length : size_t
+    }
+
+    enum VTL_publication_marked_text_modification_Shift {
+        kBold
+        kItalic
+        kStrikethrough
+    }
+
+    class VTL_publication_text_modification_Flags <<typedef int>> {
+        BOLD          = 1<<0
+        ITALIC        = 1<<1
+        STRIKETHROUGH = 1<<2
+        --
+        + SetBold(flags*)
+        + SetItalic(flags*)
+        + SetStrikethrough(flags*)
+    }
+}
+
+' ===== ФАСАД =====
+class VTL_publication_text_op <<facade>> {
+    + Init(MarkedText**, Text*, MarkupType) : VTL_AppResult
+    + TransformToRegularText(Text**, MarkedText*)
+    + TransformToStandartMD(Text**, MarkedText*)
+    + TransformToTelegramMD(Text**, MarkedText*)
+    + TransformToHTML(Text**, MarkedText*)
+    + TransformToBB(Text**, MarkedText*)
+    --
+    - InitFromStandartMD()
+    - InitFromTelegramMD()
+    - InitFromHTML()
+    - InitFromBB()
+    - InitFromRegularText()
+}
+
+' ===== ИНФРАСТРУКТУРА IO =====
+class VTL_publication_text_io <<infra>> {
+    + Read(Text**, Filename) : VTL_AppResult
+    + Write(Text*, Filename) : VTL_AppResult
+}
+
+' ===== ПРОЦЕССОРЫ ФОРМАТОВ =====
+package "Format processors" as fp {
+
+    class MarkdownProcessor <<package>> {
+        + ParseTextSequential
+        + ParseTextParallel
+        + SerializeText
+        + BenchSequential
+        + BenchParallel
+    }
+
+    class TelegramProcessor <<package>> {
+        + ParseTextSequential
+        + ParseTextParallel
+        + SerializeText
+        + BenchSequential
+        + BenchParallel
+    }
+
+    class AsciidocProcessor <<package>> {
+        + ParseTextSequential
+        + ParseTextParallel
+        + ParseFile
+        + ParseFileBatchSequential
+        + ParseFileBatchParallel
+        + BenchSequential
+        + BenchParallel
+    }
+
+    class BBCodeProcessor <<package, monolithic>> {
+        + CountTextParts
+        + ProcessTag / ProcessBBTag
+        + AddTextPart
+        + ValidateInputParams
+        + AllocateTextBlock
+        + ProcessPreTagText
+        + ProcessRemainingText
+        + NeedsBBTag
+        + GetBBTagsLength
+        + WriteOpeningTags / WriteClosingTags
+        + TagsEqual
+    }
+}
+
+' ===== СВЯЗИ =====
+VTL_publication_MarkedText "1" *-- "0..*" VTL_publication_marked_text_Part : parts
+VTL_publication_marked_text_Part ..> VTL_publication_text_modification_Flags : type
+VTL_publication_text_modification_Flags ..> VTL_publication_marked_text_modification_Shift : смещения битов
+
+VTL_publication_text_op ..> VTL_publication_Text        : in/out
+VTL_publication_text_op ..> VTL_publication_MarkedText  : in/out
+VTL_publication_text_op ..> MarkdownProcessor : Standart MD
+VTL_publication_text_op ..> TelegramProcessor : Telegram MD
+VTL_publication_text_op ..> AsciidocProcessor : (расширение)
+VTL_publication_text_op ..> BBCodeProcessor   : BB
+
+VTL_publication_text_io ..> VTL_publication_Text : загрузка/выгрузка
+
+@enduml

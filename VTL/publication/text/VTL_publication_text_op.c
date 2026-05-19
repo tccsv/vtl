@@ -1,4 +1,6 @@
 #include <VTL/publication/text/VTL_publication_text_op.h>
+#include <VTL/publication/text/telegram/VTL_publication_text_op_telegram.h>
+#include <VTL/publication/text/markdown/VTL_publication_text_op_markdown.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -40,11 +42,21 @@ static VTL_AppResult vtl_text_alloc_from_marked(VTL_publication_Text** pp_out,
 
 VTL_AppResult VTL_publication_marked_text_InitFromStandartMD(
     VTL_publication_MarkedText** pp_marked_text, const VTL_publication_Text* p_src_text)
-{ return vtl_marked_text_alloc_single_part(pp_marked_text, p_src_text, 0); }
+{
+    // парсим Standart Markdown (CommonMark + GFM ~~strike~~) в параллельном режиме —
+    // три сканера (bold/italic/strike) бегут каждый в своём потоке со своим
+    // буфером маркеров, без локов. Sequential доступен отдельно через VTL_markdown_*.
+    return VTL_markdown_ParseTextParallel(p_src_text, pp_marked_text);
+}
 
 VTL_AppResult VTL_publication_marked_text_InitFromTelegramMD(
     VTL_publication_MarkedText** pp_marked_text, const VTL_publication_Text* p_src_text)
-{ return vtl_marked_text_alloc_single_part(pp_marked_text, p_src_text, 0); }
+{
+    // парсим Telegram MarkdownV2 в параллельном режиме —
+    // у каждого из трёх сканеров (bold/italic/strike) свой буфер маркеров,
+    // что даёт ускорение на больших текстах. Sequential доступен отдельно.
+    return VTL_telegram_ParseTextParallel(p_src_text, pp_marked_text);
+}
 
 VTL_AppResult VTL_publication_marked_text_InitFromHTML(
     VTL_publication_MarkedText** pp_marked_text, const VTL_publication_Text* p_src_text)
@@ -79,11 +91,20 @@ VTL_AppResult VTL_publication_marked_text_Init(
 
 VTL_AppResult VTL_publication_marked_text_TransformToStandartMD(
     VTL_publication_Text** pp_text, const VTL_publication_MarkedText* p_marked_text)
-{ return vtl_text_alloc_from_marked(pp_text, p_marked_text); }
+{
+    // сериализация выдаёт канонический CommonMark-синтаксис:
+    // ** для bold, * для italic, ~~ для strike (GFM).
+    // Линейная по символам, расспараллеливать смысла нет — упирается в memcpy.
+    return VTL_markdown_SerializeText(p_marked_text, pp_text);
+}
 
 VTL_AppResult VTL_publication_marked_text_TransformToTelegramMD(
     VTL_publication_Text** pp_text, const VTL_publication_MarkedText* p_marked_text)
-{ return vtl_text_alloc_from_marked(pp_text, p_marked_text); }
+{
+    // сериализация — линейная по символам, расспараллеливать смысла нет
+    // (упрётся в memcpy и пропускную способность памяти)
+    return VTL_telegram_SerializeText(p_marked_text, pp_text);
+}
 
 VTL_AppResult VTL_publication_marked_text_TransformToHTML(
     VTL_publication_Text** pp_text, const VTL_publication_MarkedText* p_marked_text)

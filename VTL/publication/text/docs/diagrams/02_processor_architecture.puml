@@ -1,0 +1,116 @@
+@startuml VTL_text_processor_architecture
+' === Импорт в drawio ===
+' Arrange -> Insert -> Advanced -> PlantUML
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+title Унифицированная архитектура процессора\n(одинаковая для markdown / telegram / asciidoc)\nпрефикс шаблонный — VTL_<format>_*
+
+class MarkerKind <<enum>> {
+    kBoldStart / kBoldEnd
+    kItalicStart / kItalicEnd
+    kStrikeStart / kStrikeEnd
+    .. asciidoc only ..
+    kMonoStart/End
+    kSubscriptStart/End
+    kSuperscriptStart/End
+    kHeading
+    kListItem
+    kCodeBlockStart/End
+    kQuotedBlockStart/End
+    kComment
+    kAttribute
+    kAdmonition
+    kLink
+    kCrossReference
+}
+
+class Marker <<struct>> {
+    + kind : MarkerKind
+    + pos : size_t
+    + length : size_t
+    + level : int   ' только asciidoc
+}
+
+class MarkerList <<struct, dynamic array>> {
+    + items : Marker*
+    + length : size_t
+    + capacity : size_t
+    --
+    + Init(list*)
+    + Reserve(list*, capacity)
+    + Push(list*, marker)
+    + Clear(list*)
+    + Free(list*)
+}
+
+class ScanContext <<struct>> {
+    + text : const char*
+    + text_length : size_t
+    + out : MarkerList*
+}
+
+class Scanners <<thread-fn void*(void*)>> {
+    + ScanBold(ctx)
+    + ScanItalic(ctx)
+    + ScanStrike(ctx)
+    .. asciidoc only ..
+    + ScanMono / Sub / Sup
+    + ScanLink / CrossReference
+    + ScanHeading / List
+    + ScanCodeBlock / QuotedBlock
+    + ScanComment
+    + ScanAttribute / Admonition
+}
+
+class Parser <<entry point>> {
+    + ParseDocumentSequential(Text*, MarkerList*)
+    + ParseDocumentParallel(Text*, MarkerList*)
+    + ParseTextSequential(Text*, MarkedText**)
+    + ParseTextParallel(Text*, MarkedText**)
+}
+
+class Converter <<text -> MarkedText>> {
+    + ConvertToMarkedText(Text*, MarkerList*, MarkedText**)
+    + SortMarkers(list*)
+    + MergeMarkers(parts[], MarkerList*)
+}
+
+class Serializer <<MarkedText -> text>> {
+    + SerializeText(MarkedText*, Text**)
+    + SerializeFromMarkedText(MarkedText*, Text**)
+}
+
+class ThreadsShim <<utility, _WIN32 / pthread>> {
+    + typedef thread_t
+    + thread_create(t*, fn, arg)
+    + thread_join(t)
+    + monotonic_seconds()
+}
+
+MarkerList "1" *-- "0..*" Marker : items
+Marker ..> MarkerKind : kind
+ScanContext o-- MarkerList : out (без owning)
+
+Scanners ..> ScanContext : void* ctx
+Parser ..> Scanners      : запускает\nSeq: в одном потоке\nPar: каждый в своём
+Parser ..> ScanContext   : создаёт N штук
+Parser ..> MarkerList    : собирает результат
+Parser ..> Converter     : передаёт markers
+Parser ..> ThreadsShim   : Parallel-режим
+
+Converter ..> Marker  : читает
+Serializer ..> Marker : пишет токены обратно
+
+note bottom of Parser
+  Параллельный режим:
+  у каждого сканера — свой MarkerList,
+  локов нет; слияние и сортировка
+  происходят после thread_join.
+end note
+
+@enduml
