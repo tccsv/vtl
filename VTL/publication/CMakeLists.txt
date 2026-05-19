@@ -14,6 +14,10 @@ add_library(VTL_publication OBJECT
     text/markdown/VTL_publication_text_op_markdown_data.c
     text/markdown/VTL_publication_text_op_markdown_scan.c
     text/markdown/VTL_publication_text_op_markdown_convert.c
+    text/html/VTL_publication_text_op_html.c
+    text/html/VTL_publication_text_op_html_data.c
+    text/html/VTL_publication_text_op_html_scan.c
+    text/html/VTL_publication_text_op_html_convert.c
     text/asciidoc/VTL_publication_text_op_asciidoc.c
     text/asciidoc/VTL_publication_text_op_asciidoc_data.c
     text/asciidoc/VTL_publication_text_op_asciidoc_scan.c

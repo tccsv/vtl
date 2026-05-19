@@ -1,6 +1,7 @@
 #include <VTL/publication/text/VTL_publication_text_op.h>
 #include <VTL/publication/text/telegram/VTL_publication_text_op_telegram.h>
 #include <VTL/publication/text/markdown/VTL_publication_text_op_markdown.h>
+#include <VTL/publication/text/html/VTL_publication_text_op_html.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -60,7 +61,13 @@ VTL_AppResult VTL_publication_marked_text_InitFromTelegramMD(
 
 VTL_AppResult VTL_publication_marked_text_InitFromHTML(
     VTL_publication_MarkedText** pp_marked_text, const VTL_publication_Text* p_src_text)
-{ return vtl_marked_text_alloc_single_part(pp_marked_text, p_src_text, 0); }
+{
+    // парсим HTML в параллельном режиме — три сканера (bold/italic/strike)
+    // на семейства тегов <b>/<strong>, <i>/<em>, <s>/<del> бегут каждый
+    // в своём потоке со своим буфером маркеров, без локов.
+    // Sequential доступен отдельно через VTL_html_*.
+    return VTL_html_ParseTextParallel(p_src_text, pp_marked_text);
+}
 
 VTL_AppResult VTL_publication_marked_text_InitFromBB(
     VTL_publication_MarkedText** pp_marked_text, const VTL_publication_Text* p_src_text)
@@ -108,7 +115,12 @@ VTL_AppResult VTL_publication_marked_text_TransformToTelegramMD(
 
 VTL_AppResult VTL_publication_marked_text_TransformToHTML(
     VTL_publication_Text** pp_text, const VTL_publication_MarkedText* p_marked_text)
-{ return vtl_text_alloc_from_marked(pp_text, p_marked_text); }
+{
+    // сериализация выдаёт канонические короткие теги: <b>, <i>, <s>.
+    // Спецсимволы '<' '>' '&' экранируются HTML-entities.
+    // Линейная по символам, расспараллеливать смысла нет — упирается в memcpy.
+    return VTL_html_SerializeText(p_marked_text, pp_text);
+}
 
 VTL_AppResult VTL_publication_marked_text_TransformToBB(
     VTL_publication_Text** pp_text, const VTL_publication_MarkedText* p_marked_text)
