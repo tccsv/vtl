@@ -46,30 +46,30 @@ static char* build_large_asciidoc(size_t target_kb, size_t* out_len)
     /* Большой кусок текста с разными типами разметки.
      * Чем больше типов в одном фрагменте, тем больше работы для каждого сканера. */
     const char* fragment =
-        ":author: VTL Team\n"
-        ":revdate: 2026-05-12\n\n"
-        "= Section Heading Level One\n"
-        "== Section Heading Level Two\n\n"
-        "Paragraph with *bold*, _italic_, `mono`, ~sub~ and ^sup^ inline plus "
-        "[line-through]#strikethrough# and a link:https://example.com[example] "
-        "ссылка плюс cross-reference <<intro,intro>> в одном предложении.\n\n"
-        "NOTE: This is an admonition paragraph with *bold inside*.\n"
-        "WARNING: Another admonition with _italic_ markup inside it.\n\n"
-        "* First bullet with *strong* inside\n"
-        "* Second bullet with _emphasis_ inside\n"
-        "** Nested bullet level two with `mono`\n"
-        ". Numbered item one\n"
-        ". Numbered item two\n\n"
-        "[source,c]\n"
-        "----\n"
-        "int main(void) { return 0; }\n"
-        "----\n\n"
-        "____\n"
-        "A quoted block with *bold* and _italic_ inside the quotes.\n"
-        "____\n\n"
-        "// A comment line that should be ignored by the converter.\n\n"
-        "Final paragraph with all kinds of markers: *b* _i_ `m` ~s~ ^p^ "
-        "[line-through]#strike# link:url[txt] <<ref>> mixed together.\n\n";
+            ":author: VTL Team\n"
+            ":revdate: 2026-05-12\n\n"
+            "= Section Heading Level One\n"
+            "== Section Heading Level Two\n\n"
+            "Paragraph with *bold*, _italic_, `mono`, ~sub~ and ^sup^ inline plus "
+            "[line-through]#strikethrough# and a link:https://example.com[example] "
+            "ссылка плюс cross-reference <<intro,intro>> в одном предложении.\n\n"
+            "NOTE: This is an admonition paragraph with *bold inside*.\n"
+            "WARNING: Another admonition with _italic_ markup inside it.\n\n"
+            "* First bullet with *strong* inside\n"
+            "* Second bullet with _emphasis_ inside\n"
+            "** Nested bullet level two with `mono`\n"
+            ". Numbered item one\n"
+            ". Numbered item two\n\n"
+            "[source,c]\n"
+            "----\n"
+            "int main(void) { return 0; }\n"
+            "----\n\n"
+            "____\n"
+            "A quoted block with *bold* and _italic_ inside the quotes.\n"
+            "____\n\n"
+            "// A comment line that should be ignored by the converter.\n\n"
+            "Final paragraph with all kinds of markers: *b* _i_ `m` ~s~ ^p^ "
+            "[line-through]#strike# link:url[txt] <<ref>> mixed together.\n\n";
 
     size_t frag_len = strlen(fragment);
     size_t target = target_kb * 1024;
@@ -90,11 +90,11 @@ static char* build_large_asciidoc(size_t target_kb, size_t* out_len)
 static void demo_asciidoc_parser(void)
 {
     const char* sample =
-        ":author: Demo\n\n"
-        "= Demo Title\n\n"
-        "Plain text with *bold*, _italic_, `mono`, ~sub~, ^sup^, "
-        "[line-through]#strike# and link:url[link] markers.\n"
-        "NOTE: admonition example.\n";
+            ":author: Demo\n\n"
+            "= Demo Title\n\n"
+            "Plain text with *bold*, _italic_, `mono`, ~sub~, ^sup^, "
+            "[line-through]#strike# and link:url[link] markers.\n"
+            "NOTE: admonition example.\n";
     VTL_publication_Text src = { (char*)sample, strlen(sample) };
 
     VTL_publication_MarkedText* marked = NULL;
@@ -176,7 +176,7 @@ static void bench_asciidoc_batch(size_t doc_size_kb, size_t files, size_t iterat
 
     const char** paths = (const char**)malloc(files * sizeof(char*));
     VTL_publication_MarkedText** out =
-        (VTL_publication_MarkedText**)calloc(files, sizeof(*out));
+            (VTL_publication_MarkedText**)calloc(files, sizeof(*out));
     if (!paths || !out) { free(paths); free(out); remove(path); return; }
     for (size_t i = 0; i < files; ++i) paths[i] = path;
 
@@ -238,26 +238,26 @@ int main(void)
     bench_asciidoc_batch(128, 8, 20);
 
     const char* audio_files[] = {
-        "audio_ariel.mp3",
-        "audio_styuardessa.mp3",
-        "audio_xanadu.mp3"
+            "audio_ariel.mp3",
+            "audio_styuardessa.mp3",
+            "audio_xanadu.mp3"
     };
     int pick = rand() % 3;
 
     printf("\n=== Text Pipeline ===\n");
     VTL_AppResult res_text = VTL_PubicateMarkedText("text.md",
-        VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG,
-        VTL_markup_type_kTelegramMD);
+                                                    VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG,
+                                                    VTL_markup_type_kTelegramMD);
     printf("Text: %d (%s)\n\n", res_text,
-        res_text == VTL_res_kOk ? "OK" : "ERROR");
+           res_text == VTL_res_kOk ? "OK" : "ERROR");
 
     printf("=== Audio Pipeline [%d]: %s ===\n", pick, audio_files[pick]);
     VTL_AppResult res_audio = VTL_PubicateAudioWithMarkedText(
-        audio_files[pick], "text.md",
-        VTL_markup_type_kTelegramMD,
-        VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG);
+            audio_files[pick], "text.md",
+            VTL_markup_type_kTelegramMD,
+            VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG);
     printf("Audio: %d (%s)\n", res_audio,
-        res_audio == VTL_res_kOk ? "OK" : "ERROR");
+           res_audio == VTL_res_kOk ? "OK" : "ERROR");
 
     return (res_text != VTL_res_kOk) ? res_text : res_audio;
 }
