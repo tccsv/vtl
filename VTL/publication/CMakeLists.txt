@@ -6,6 +6,18 @@ add_library(VTL_publication OBJECT
     text/infra/VTL_publication_text_read.c
     text/infra/VTL_publication_text_write.c
     text/bbcode/VTL_publication_text_op_bbcode.c
+    text/telegram/VTL_publication_text_op_telegram.c
+    text/telegram/VTL_publication_text_op_telegram_data.c
+    text/telegram/VTL_publication_text_op_telegram_scan.c
+    text/telegram/VTL_publication_text_op_telegram_convert.c
+    text/markdown/VTL_publication_text_op_markdown.c
+    text/markdown/VTL_publication_text_op_markdown_data.c
+    text/markdown/VTL_publication_text_op_markdown_scan.c
+    text/markdown/VTL_publication_text_op_markdown_convert.c
+    text/html/VTL_publication_text_op_html.c
+    text/html/VTL_publication_text_op_html_data.c
+    text/html/VTL_publication_text_op_html_scan.c
+    text/html/VTL_publication_text_op_html_convert.c
     text/asciidoc/VTL_publication_text_op_asciidoc.c
     text/asciidoc/VTL_publication_text_op_asciidoc_data.c
     text/asciidoc/VTL_publication_text_op_asciidoc_scan.c

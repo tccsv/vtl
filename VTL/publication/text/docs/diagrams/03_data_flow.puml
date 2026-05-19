@@ -1,0 +1,36 @@
+@startuml VTL_text_data_flow
+' === Импорт в drawio ===
+' Arrange -> Insert -> Advanced -> PlantUML
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+
+title Поток данных: исходный текст -> MarkedText -> результат
+
+class RawText <<VTL_publication_Text>> {
+    исходный текст
+    с разметкой
+}
+
+class Markers <<MarkerList>> {
+    список найденных
+    токенов разметки
+}
+
+class Marked <<VTL_publication_MarkedText>> {
+    нарезанные части
+    с битовыми флагами
+}
+
+class Output <<VTL_publication_Text>> {
+    результат в целевом
+    формате разметки
+}
+
+RawText --> Markers : "Scanners + Parser\n(Seq / Parallel)"
+Markers --> Marked  : "Converter\n(ConvertToMarkedText)"
+Marked  --> Output  : "Serializer\n(SerializeFromMarkedText)"
+
+@enduml
