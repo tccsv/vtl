@@ -11,6 +11,10 @@ add_library(VTL_publication OBJECT
     text/asciidoc/VTL_publication_text_op_asciidoc_scan.c
     text/asciidoc/VTL_publication_text_op_asciidoc_convert.c
     text/asciidoc/infra/VTL_publication_text_op_asciidoc_load.c
+    text/mediawiki/VTL_publication_text_op_mediawiki.c
+    text/mediawiki/VTL_publication_text_op_mediawiki_data.c
+    text/mediawiki/VTL_publication_text_op_mediawiki_scan.c
+    text/mediawiki/VTL_publication_text_op_mediawiki_convert.c
 )
 
 if(UNIX)

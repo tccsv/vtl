@@ -57,3 +57,13 @@ if(APPLE)
 endif()
 
 enable_testing()
+add_subdirectory(VTL/test)
+
+add_test(
+    NAME VTL_mediawiki_pipeline
+    COMMAND ${AppName} --mediawiki ${CMAKE_SOURCE_DIR}/text.wiki
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+set_tests_properties(VTL_mediawiki_pipeline PROPERTIES
+    PASS_REGULAR_EXPRESSION "Text Pipeline \\(MediaWiki"
+)

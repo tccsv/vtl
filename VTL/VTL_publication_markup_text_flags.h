@@ -17,10 +17,11 @@ typedef enum _VTL_publication_marked_text_MarkupType
     VTL_markup_type_kTelegramMD,
     VTL_markup_type_kHTML,
     VTL_markup_type_kBB,
-    VTL_markup_type_kAsciiDoc
+    VTL_markup_type_kAsciiDoc,
+    VTL_markup_type_kMediaWiki
 } VTL_publication_marked_text_MarkupType;
 
-#define VTL_PUBLICATION_MARKED_TEXT_MARKUP_TYPE_MAX VTL_markup_type_kAsciiDoc
+#define VTL_PUBLICATION_MARKED_TEXT_MARKUP_TYPE_MAX VTL_markup_type_kMediaWiki
 #define VTL_PUBLICATION_TEXT_TYPE_REGULAR_SHIFT (VTL_PUBLICATION_MARKED_TEXT_MARKUP_TYPE_MAX + 1)
 #define VTL_PUBLICATION_TEXT_TYPE_MAX VTL_PUBLICATION_TEXT_TYPE_REGULAR_SHIFT
 #define VTL_PUBLICATION_TEXT_TYPE_MAX_NUM (VTL_PUBLICATION_TEXT_TYPE_MAX + 1)
@@ -32,12 +33,14 @@ typedef int VTL_publication_marked_text_type_Flags;
 #define VTL_PUBLICATION_TEXT_TYPE_HTML (1 << VTL_markup_type_kHTML)
 #define VTL_PUBLICATION_TEXT_TYPE_BB (1 << VTL_markup_type_kBB)
 #define VTL_PUBLICATION_TEXT_TYPE_ASCIIDOC (1 << VTL_markup_type_kAsciiDoc)
+#define VTL_PUBLICATION_TEXT_TYPE_MEDIAWIKI (1 << VTL_markup_type_kMediaWiki)
 #define VTL_PUBLICATION_TEXT_TYPE_REGULAR (1 << VTL_PUBLICATION_TEXT_TYPE_REGULAR_SHIFT)
 
 bool VTL_publication_marked_text_type_flag_CheckStandartMD(const VTL_publication_marked_text_type_Flags flags);
 bool VTL_publication_marked_text_type_flag_CheckTelegramMD(const VTL_publication_marked_text_type_Flags flags);
 bool VTL_publication_marked_text_type_flag_CheckHTML(const VTL_publication_marked_text_type_Flags flags);
 bool VTL_publication_marked_text_type_flag_CheckBB(const VTL_publication_marked_text_type_Flags flags);
+bool VTL_publication_marked_text_type_flag_CheckMediaWiki(const VTL_publication_marked_text_type_Flags flags);
 bool VTL_publication_marked_text_type_flag_CheckRegularText(const VTL_publication_marked_text_type_Flags flags);
 
 

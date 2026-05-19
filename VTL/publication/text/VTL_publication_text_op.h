@@ -34,6 +34,9 @@ VTL_AppResult VTL_publication_marked_text_TransformToHTML(VTL_publication_Text**
 VTL_AppResult VTL_publication_marked_text_TransformToBB(VTL_publication_Text** pp_out_marked_text,
                                                     const VTL_publication_MarkedText* p_src_marked_text);
 
+VTL_AppResult VTL_publication_marked_text_TransformToMediaWiki(VTL_publication_Text** pp_out_marked_text,
+                                                    const VTL_publication_MarkedText* p_src_marked_text);
+
 #ifdef __cplusplus
 }
 #endif

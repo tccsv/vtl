@@ -19,10 +19,6 @@
 #endif
 
 
-/* Сколько физических потоков CPU доступно. Эффективность параллелизма
- * правильно считать относительно числа ядер, а не числа созданных потоков —
- * больше потоков чем ядер не дают дополнительного ускорения.
- * На Linux/Mac используем POSIX sysconf, на Windows — GetSystemInfo. */
 static long detect_cpu_cores(void)
 {
 #ifdef _WIN32
@@ -36,15 +32,9 @@ static long detect_cpu_cores(void)
 }
 
 
-/*
- * Генерация большого AsciiDoc документа в памяти. Это нужно чтобы получить
- * реальный speedup от распараллеливания: на маленьком тексте overhead на
- * создание потоков перекрывает полезную работу.
- */
 static char* build_large_asciidoc(size_t target_kb, size_t* out_len)
 {
-    /* Большой кусок текста с разными типами разметки.
-     * Чем больше типов в одном фрагменте, тем больше работы для каждого сканера. */
+
     const char* fragment =
         ":author: VTL Team\n"
         ":revdate: 2026-05-12\n\n"
@@ -166,7 +156,7 @@ static void bench_asciidoc_batch(size_t doc_size_kb, size_t files, size_t iterat
         return;
     }
 
-    /* Записываем во временный файл — batch API работает по путям */
+
     const char* path = "_bench_input.adoc";
     FILE* f = fopen(path, "wb");
     if (!f) { free(buf); return; }
@@ -202,8 +192,7 @@ static void bench_asciidoc_batch(size_t doc_size_kb, size_t files, size_t iterat
     double t_par = vtl_monotonic_seconds() - t0;
 
     long cpu_cores = detect_cpu_cores();
-    /* Эффективный N — минимум из числа потоков и числа ядер CPU.
-     * Больше потоков чем ядер не дают физического ускорения. */
+
     double effective_n = (double)((files < (size_t)cpu_cores) ? files : (size_t)cpu_cores);
     double speedup = (t_par > 0.0) ? (t_seq / t_par) : 0.0;
     double efficiency = speedup / effective_n;
@@ -220,7 +209,7 @@ static void bench_asciidoc_batch(size_t doc_size_kb, size_t files, size_t iterat
 }
 
 
-int main(void)
+int main(int argc, char** argv)
 {
 #ifdef _WIN32
     /* Кириллица в printf — UTF-8 в исходниках. Дефолтная codepage консоли
@@ -233,6 +222,20 @@ int main(void)
 
     srand((unsigned)time(NULL));
 
+
+    int use_mediawiki = 0;
+    const char* text_path = NULL;
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--mediawiki") == 0 || strcmp(argv[i], "--wiki") == 0) {
+            use_mediawiki = 1;
+        } else if (argv[i][0] != '-') {
+            text_path = argv[i];
+        }
+    }
+    if (!text_path) {
+        text_path = use_mediawiki ? "text.wiki" : "text.md";
+    }
+
     demo_asciidoc_parser();
     bench_asciidoc_scanners(512, 50);
     bench_asciidoc_batch(128, 8, 20);
@@ -244,17 +247,24 @@ int main(void)
     };
     int pick = rand() % 3;
 
-    printf("\n=== Text Pipeline ===\n");
-    VTL_AppResult res_text = VTL_PubicateMarkedText("text.md",
+    printf("\n=== Text Pipeline (%s, %s) ===\n",
+           use_mediawiki ? "MediaWiki" : "TelegramMD", text_path);
+    VTL_AppResult res_text = VTL_PubicateMarkedText(text_path,
         VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG,
-        VTL_markup_type_kTelegramMD);
+        markup);
     printf("Text: %d (%s)\n\n", res_text,
         res_text == VTL_res_kOk ? "OK" : "ERROR");
 
+
+    if (use_mediawiki) {
+        printf("Audio: skipped (--mediawiki mode)\n");
+        return res_text;
+    }
+
     printf("=== Audio Pipeline [%d]: %s ===\n", pick, audio_files[pick]);
     VTL_AppResult res_audio = VTL_PubicateAudioWithMarkedText(
-        audio_files[pick], "text.md",
-        VTL_markup_type_kTelegramMD,
+        audio_files[pick], text_path,
+        markup,
         VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG);
     printf("Audio: %d (%s)\n", res_audio,
         res_audio == VTL_res_kOk ? "OK" : "ERROR");

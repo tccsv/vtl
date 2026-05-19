@@ -25,6 +25,11 @@ bool VTL_publication_marked_text_type_flag_CheckBB(const VTL_publication_marked_
     return (flags & VTL_PUBLICATION_TEXT_TYPE_BB) == VTL_PUBLICATION_TEXT_TYPE_BB;
 }
 
+bool VTL_publication_marked_text_type_flag_CheckMediaWiki(const VTL_publication_marked_text_type_Flags flags)
+{
+    return (flags & VTL_PUBLICATION_TEXT_TYPE_MEDIAWIKI) == VTL_PUBLICATION_TEXT_TYPE_MEDIAWIKI;
+}
+
 bool VTL_publication_marked_text_type_flag_CheckRegularText(const VTL_publication_marked_text_type_Flags flags)
 {
     return (flags & VTL_PUBLICATION_TEXT_TYPE_REGULAR) == VTL_PUBLICATION_TEXT_TYPE_REGULAR;

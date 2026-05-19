@@ -1,10 +1,10 @@
 #include <VTL/content_platform/tg/VTL_content_platform_tg_net.h>
 
 #ifndef TG_BOT_TOKEN
-#define TG_BOT_TOKEN "7810720887:AAHwKaYUpJP9stmNgMp1Di24pfhanGKxyFQ"
+#define TG_BOT_TOKEN "8517247017:AAFJWJWaE3Tb5VfDYm93M9819mTNVXgoM_E"
 #endif
 #ifndef TG_CHAT_ID
-#define TG_CHAT_ID "-1002621373458"
+#define TG_CHAT_ID "639267858"
 #endif
 
 #include <curl/curl.h>
@@ -16,20 +16,12 @@
 #include <ctype.h>
 
 
-// Initialize API data (token, chat_id)
+// Initialize API data (token, chat_id). Env vars override the compile-time defaults.
 static void VTL_content_platform_tg_ApiDataInit(VTL_net_api_data_TG* p) {
     const char* tok = getenv("TG_BOT_TOKEN");
-    if (!tok || !*tok) {
-        fprintf(stderr, "[error] TG_BOT_TOKEN environment variable is not set or empty.\n");
-        exit(EXIT_FAILURE);
-    }
-    p->token   = (tok && *tok)  ? tok : TG_BOT_TOKEN;
+    p->token = (tok && *tok) ? tok : TG_BOT_TOKEN;
     const char* cid = getenv("TG_CHAT_ID");
-    if (!cid || !*cid) {
-        fprintf(stderr, "[error] TG_CHAT_ID environment variable is not set or empty.\n");
-        exit(EXIT_FAILURE);
-    }
-    p->chat_id = (cid && *cid)  ? cid : TG_CHAT_ID;
+    p->chat_id = (cid && *cid) ? cid : TG_CHAT_ID;
     p->text = NULL;
     p->parse_mode = NULL;
 }
@@ -68,19 +60,132 @@ static char* VTL_content_platform_tg_LoadFile(const char* path) {
     return buf;
 }
 
-// Send text message
-static int VTL_content_platform_tg_SendMessage(VTL_net_api_data_TG* api) {
+// Send a single text message (no length checks; up to Telegram's 4096-char hard limit).
+static int VTL_content_platform_tg_SendMessageRaw(VTL_net_api_data_TG* api, const char* text, size_t len) {
     char url[512];
     if (VTL_content_platform_tg_PrepareBaseUrl(api, url, sizeof(url))) return 0;
     strcat(url, "sendMessage");
+    char* tmp = (char*)malloc(len + 1);
+    if (!tmp) return 0;
+    memcpy(tmp, text, len);
+    tmp[len] = '\0';
     JSON_Value* root_val = json_value_init_object();
     JSON_Object* root = json_value_get_object(root_val);
     json_object_set_string(root, "chat_id", api->chat_id);
-    json_object_set_string(root, "text", api->text);
+    json_object_set_string(root, "text", tmp);
     if (api->parse_mode)
         json_object_set_string(root, "parse_mode", api->parse_mode);
     int ok = VTL_content_platform_tg_http_post_json(url, root_val);
     json_value_free(root_val);
+    free(tmp);
+    return ok;
+}
+
+// Telegram sendMessage limit is 4096 UTF-16 code units; conservatively cap at 3500 bytes
+// and split on the nearest newline / whitespace, never inside a UTF-8 multibyte sequence
+// or an HTML tag. When chunking, also carry any open <b>/<i>/<s> tags across boundaries.
+#define VTL_TG_TEXT_CHUNK_MAX 3500
+
+// Update the open-tag depth counters for the bytes p[..p+n]. Naive scanner that
+// looks for the supported <b>, <i>, <s> and their closing forms; everything else
+// (escaped &lt;/&gt; or attributes) is ignored.
+static void vtl_tg_track_tags(const char* p, size_t n, int* bold, int* italic, int* strike) {
+    size_t i = 0;
+    while (i < n) {
+        if (p[i] != '<') { ++i; continue; }
+        if (i + 2 < n && p[i + 1] == '/' && p[i + 3] == '>') {
+            char c = p[i + 2];
+            if      (c == 'b' && *bold   > 0) (*bold)--;
+            else if (c == 'i' && *italic > 0) (*italic)--;
+            else if (c == 's' && *strike > 0) (*strike)--;
+            i += 4; continue;
+        }
+        if (i + 2 < n && p[i + 2] == '>') {
+            char c = p[i + 1];
+            if      (c == 'b') (*bold)++;
+            else if (c == 'i') (*italic)++;
+            else if (c == 's') (*strike)++;
+            i += 3; continue;
+        }
+        ++i;
+    }
+}
+
+static int VTL_content_platform_tg_SendMessage(VTL_net_api_data_TG* api) {
+    if (!api->text) return 0;
+    const char* p = api->text;
+    size_t total = strlen(p);
+    if (total <= VTL_TG_TEXT_CHUNK_MAX) {
+        return VTL_content_platform_tg_SendMessageRaw(api, p, total);
+    }
+    size_t off = 0;
+    int ok = 1;
+    int bold = 0, italic = 0, strike = 0;
+    while (off < total) {
+        size_t remain = total - off;
+        size_t take = remain > VTL_TG_TEXT_CHUNK_MAX ? VTL_TG_TEXT_CHUNK_MAX : remain;
+        if (take < remain) {
+            size_t lo = take - take / 4;
+            size_t cut = take;
+            for (size_t i = take; i > lo; --i) {
+                if (p[off + i - 1] == '\n') { cut = i; break; }
+            }
+            if (cut == take) {
+                for (size_t i = take; i > lo; --i) {
+                    if (p[off + i - 1] == ' ') { cut = i; break; }
+                }
+            }
+            // Never split inside a UTF-8 multibyte sequence.
+            while (cut > 1 && ((unsigned char)p[off + cut] & 0xC0) == 0x80) --cut;
+            // Never split inside an HTML tag: back up past any unmatched '<'.
+            for (size_t i = cut; i > 0; --i) {
+                char c = p[off + i - 1];
+                if (c == '>') break;
+                if (c == '<') { cut = i - 1; break; }
+            }
+            // Never split inside an <a>...</a>. Walk the slice and if the last
+            // <a opened before `cut` has its </a> after `cut`, move `cut` to
+            // just before that <a.
+            {
+                size_t last_open = (size_t)-1;
+                int inside = 0;
+                for (size_t i = 0; i < cut; ++i) {
+                    if (p[off + i] != '<') continue;
+                    if (i + 2 < cut && p[off + i + 1] == 'a' &&
+                        (p[off + i + 2] == ' ' || p[off + i + 2] == '>')) {
+                        last_open = i; inside = 1;
+                    } else if (i + 3 < cut && p[off + i + 1] == '/' &&
+                               p[off + i + 2] == 'a' && p[off + i + 3] == '>') {
+                        inside = 0;
+                    }
+                }
+                if (inside && last_open != (size_t)-1) cut = last_open;
+            }
+            take = cut;
+        }
+        // Build chunk: open tags inherited from previous + body + close-all at end.
+        size_t prefix_len = (size_t)(bold * 3 + italic * 3 + strike * 3);
+        // Update open-tag state with bytes in this chunk.
+        int b2 = bold, i2 = italic, s2 = strike;
+        vtl_tg_track_tags(p + off, take, &b2, &i2, &s2);
+        size_t suffix_len = (size_t)(b2 * 4 + i2 * 4 + s2 * 4);
+        char* buf = (char*)malloc(prefix_len + take + suffix_len + 1);
+        if (!buf) { ok = 0; break; }
+        size_t bp = 0;
+        for (int k = 0; k < bold;   ++k) { memcpy(buf + bp, "<b>", 3); bp += 3; }
+        for (int k = 0; k < italic; ++k) { memcpy(buf + bp, "<i>", 3); bp += 3; }
+        for (int k = 0; k < strike; ++k) { memcpy(buf + bp, "<s>", 3); bp += 3; }
+        memcpy(buf + bp, p + off, take); bp += take;
+        // Close in reverse open order.
+        for (int k = 0; k < s2; ++k) { memcpy(buf + bp, "</s>", 4); bp += 4; }
+        for (int k = 0; k < i2; ++k) { memcpy(buf + bp, "</i>", 4); bp += 4; }
+        for (int k = 0; k < b2; ++k) { memcpy(buf + bp, "</b>", 4); bp += 4; }
+        if (!VTL_content_platform_tg_SendMessageRaw(api, buf, bp)) ok = 0;
+        free(buf);
+        bold = b2; italic = i2; strike = s2;
+        off += take;
+        while (off < total && (p[off] == '\n' || p[off] == ' ')) ++off;
+    }
     return ok;
 }
 
@@ -99,13 +204,13 @@ VTL_AppResult VTL_content_platform_tg_text_SendNow(const VTL_Filename file_name)
     return ok ? VTL_res_kOk : VTL_res_kErr;
 }
 
-// Marked text (MarkdownV2)
+// Marked text (HTML)
 VTL_AppResult VTL_content_platform_tg_marked_text_SendNow(const VTL_Filename file_name) {
     VTL_net_api_data_TG api_data; INIT();
     char* txt = VTL_content_platform_tg_LoadFile(file_name);
     if (!txt) return VTL_res_kErr;
     api_data.text = txt;
-    api_data.parse_mode = NULL;
+    api_data.parse_mode = "HTML";
     int ok = VTL_content_platform_tg_SendMessage(&api_data);
     free(txt);
     return ok ? VTL_res_kOk : VTL_res_kErr;
