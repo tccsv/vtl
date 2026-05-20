@@ -1,6 +1,7 @@
 add_library(VTL_utils OBJECT
     VTL_time.c
     VTL_file.c
+    VTL_time_utils.c
     VTL_encryptor.c
     log/VTL_console_log.c
     curl/VTL_http_client.c

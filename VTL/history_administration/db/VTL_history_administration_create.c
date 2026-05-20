@@ -7,12 +7,7 @@
 #include <VTL/history_administration/VTL_history_administration_data.h>
 #include <VTL/utils/db/VTL_db.h>
 #include <VTL/VTL_app_result.h>
-
-static void time_to_sql(const VTL_Time* p_time, char* buf, size_t buf_size) {
-    time_t raw = (time_t)(*p_time);
-    struct tm* tm_info = localtime(&raw);
-    strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S", tm_info);
-}
+#include <VTL/utils/VTL_time_utils.h>
 
 VTL_AppResult VTL_history_administration_CreateTable(VTL_Database* db) {
     const char* sql =
@@ -39,7 +34,7 @@ VTL_AppResult VTL_history_administration_CreateTable(VTL_Database* db) {
 
 VTL_AppResult VTL_history_administration_Insert(VTL_Database* db, VTL_UserHistory* history) {
     char time_buf[64];
-    time_to_sql(&history->publication_start_time, time_buf, sizeof(time_buf));
+    VTL_time_to_sql(&history->publication_start_time, time_buf, sizeof(time_buf));
 
     char sql[2048];
     snprintf(sql, sizeof(sql),

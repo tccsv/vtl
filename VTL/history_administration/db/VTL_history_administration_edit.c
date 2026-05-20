@@ -3,12 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-static void time_to_sql(const VTL_Time* p_time, char* buf, size_t buf_size) {
-    time_t raw = (time_t)(*p_time);
-    struct tm* tm_info = localtime(&raw);
-    strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S", tm_info);
-}
+#include <VTL/utils/VTL_time_utils.h>
 
 VTL_AppResult VTL_history_administration_UpdateStatus(
         VTL_Database* db,
@@ -114,7 +109,7 @@ VTL_AppResult VTL_history_administration_Reschedule(
         VTL_Time new_time) {
 
     char time_buf[64];
-    time_to_sql(&new_time, time_buf, sizeof(time_buf));
+    VTL_time_to_sql(&new_time, time_buf, sizeof(time_buf));
 
     char sql[512];
     snprintf(sql, sizeof(sql),

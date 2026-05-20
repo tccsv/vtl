@@ -7,13 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-
-static void time_to_sql(const VTL_Time *p_time, char *buf, size_t buf_size)
-{
-    time_t raw = (time_t)(*p_time);
-    struct tm *tm_info = localtime(&raw);
-    strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S", tm_info);
-}
+#include <VTL/utils/VTL_time_utils.h>
 
 static const char *platform_str(int platform)
 {
@@ -175,7 +169,7 @@ VTL_AppResult VTL_history_administration_ShowByUser(VTL_Database *db, const char
 VTL_AppResult VTL_history_administration_ShowBeforeTime(VTL_Database *db, const VTL_Time *p_time)
 {
     char time_buf[64];
-    time_to_sql(p_time, time_buf, sizeof(time_buf));
+    VTL_time_to_sql(p_time, time_buf, sizeof(time_buf));
 
     const char *paramValues[1] = {time_buf};
 
@@ -200,7 +194,7 @@ VTL_AppResult VTL_history_administration_ShowBeforeTime(VTL_Database *db, const 
 VTL_AppResult VTL_history_administration_ShowAfterTime(VTL_Database *db, const VTL_Time *p_time)
 {
     char time_buf[64];
-    time_to_sql(p_time, time_buf, sizeof(time_buf));
+    VTL_time_to_sql(p_time, time_buf, sizeof(time_buf));
 
     const char *paramValues[1] = {time_buf};
 

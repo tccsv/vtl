@@ -13,6 +13,7 @@ extern "C"
 #include <VTL/utils/VTL_file.h>
 #include <VTL/utils/VTL_string.h>
 #include <VTL/utils/VTL_time.h>
+#include <VTL/utils/VTL_time_utils.h>
 
 #ifdef __cplusplus
 }

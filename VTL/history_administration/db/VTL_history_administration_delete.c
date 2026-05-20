@@ -3,12 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-static void time_to_sql(const VTL_Time* p_time, char* buf, size_t buf_size) {
-    time_t raw = (time_t)(*p_time);
-    struct tm* tm_info = localtime(&raw);
-    strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S", tm_info);
-}
+#include <VTL/utils/VTL_time_utils.h>
 
 static VTL_AppResult execute_delete(VTL_Database* db, const char* sql, const char* description) {
     PGresult* res = PQexec(db->conn, sql);
@@ -56,7 +51,7 @@ VTL_AppResult VTL_history_administration_DeleteById(VTL_Database* db, int public
 
 VTL_AppResult VTL_history_administration_DeleteBeforeTime(VTL_Database* db, const VTL_Time* p_time) {
     char time_buf[64];
-    time_to_sql(p_time, time_buf, sizeof(time_buf));
+    VTL_time_to_sql(p_time, time_buf, sizeof(time_buf));
 
     char sql[512];
     snprintf(sql, sizeof(sql),
@@ -71,7 +66,7 @@ VTL_AppResult VTL_history_administration_DeleteBeforeTime(VTL_Database* db, cons
 
 VTL_AppResult VTL_history_administration_DeleteAfterTime(VTL_Database* db, const VTL_Time* p_time) {
     char time_buf[64];
-    time_to_sql(p_time, time_buf, sizeof(time_buf));
+    VTL_time_to_sql(p_time, time_buf, sizeof(time_buf));
 
     char sql[512];
     snprintf(sql, sizeof(sql),

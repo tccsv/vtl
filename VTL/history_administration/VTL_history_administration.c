@@ -81,7 +81,6 @@ bool VTL_user_history_db_Insert(VTL_Database *db, VTL_UserHistory *history)
         "text_file_name, media_file_name, published_at) "
         "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id";
 
-    // Массив значений параметров
     const char *paramValues[7];
     paramValues[0] = history->user.nickname;
     paramValues[1] = NULL;
