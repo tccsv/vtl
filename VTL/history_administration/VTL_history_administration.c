@@ -12,43 +12,48 @@
 #include <stdbool.h>
 #include <time.h>
 
-// Глобальная БД (или передавайте как параметр)
+// Глобальная БД
 extern VTL_Database g_db;
 
 // ==================== Вспомогательные ====================
 
-static void print_publication_row(PGresult* res, int i) {
+static void print_publication_row(PGresult *res, int i)
+{
     printf("  #%s | @%s | platform=%s | status=%s | time=%s",
-        PQgetvalue(res, i, 0),
-        PQgetvalue(res, i, 1),
-        atoi(PQgetvalue(res, i, 3)) == VTL_PLATFORM_TELEGRAM ? "TG" : "VK",
-        PQgetvalue(res, i, 4),
-        PQgetvalue(res, i, 7));
+           PQgetvalue(res, i, 0),
+           PQgetvalue(res, i, 1),
+           atoi(PQgetvalue(res, i, 3)) == VTL_PLATFORM_TELEGRAM ? "TG" : "VK",
+           PQgetvalue(res, i, 4),
+           PQgetvalue(res, i, 7));
 
-    if (!PQgetisnull(res, i, 5)) {
+    if (!PQgetisnull(res, i, 5))
+    {
         printf(" | text=%s", PQgetvalue(res, i, 5));
     }
-    if (!PQgetisnull(res, i, 6)) {
+    if (!PQgetisnull(res, i, 6))
+    {
         printf(" | media=%s", PQgetvalue(res, i, 6));
     }
     printf("\n");
 }
 
-static void time_to_sql(const VTL_Time* p_time, char* buf, size_t buf_size) {
+static void time_to_sql(const VTL_Time *p_time, char *buf, size_t buf_size)
+{
     time_t raw = (time_t)(*p_time);
-    struct tm* tm_info = localtime(&raw);
+    struct tm *tm_info = localtime(&raw);
     strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S", tm_info);
 }
 
-static const char* SELECT_ALL =
+static const char *SELECT_ALL =
     "SELECT id, user_nickname, publication_type, platform, "
     "status, text_file_name, media_file_name, published_at "
     "FROM publication_history ORDER BY published_at DESC";
 
 // ==================== Создание таблицы ====================
 
-bool VTL_user_history_db_CreateTable(VTL_Database* db) {
-    const char* sql =
+bool VTL_user_history_db_CreateTable(VTL_Database *db)
+{
+    const char *sql =
         "CREATE TABLE IF NOT EXISTS publication_history ("
         "  id SERIAL PRIMARY KEY,"
         "  user_nickname VARCHAR(256) NOT NULL REFERENCES users(nickname),"
@@ -65,32 +70,51 @@ bool VTL_user_history_db_CreateTable(VTL_Database* db) {
 
 // ==================== Insert ====================
 
-bool VTL_user_history_db_Insert(VTL_Database* db, VTL_UserHistory* history) {
+bool VTL_user_history_db_Insert(VTL_Database *db, VTL_UserHistory *history)
+{
     char time_buf[64];
     time_to_sql(&history->publication_start_time, time_buf, sizeof(time_buf));
 
-    char sql[2048];
-    snprintf(sql, sizeof(sql),
+    const char *sql =
         "INSERT INTO publication_history "
         "(user_nickname, publication_type, platform, status, "
         "text_file_name, media_file_name, published_at) "
-        "VALUES ('%s', %d, %d, %d, %s%s%s, %s%s%s, '%s') RETURNING id",
-        history->user.nickname,
-        history->publication_type,
-        history->platform,
-        history->status,
-        history->has_text_file  ? "'" : "",
-        history->has_text_file  ? history->text_file_name : "NULL",
-        history->has_text_file  ? "'" : "",
-        history->has_media_file ? "'" : "",
-        history->has_media_file ? history->media_file_name : "NULL",
-        history->has_media_file ? "'" : "",
-        time_buf
-    );
+        "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id";
 
-    PGresult* res = PQexec(db->conn, sql);
+    // Массив значений параметров
+    const char *paramValues[7];
+    paramValues[0] = history->user.nickname;
+    paramValues[1] = NULL;
+    paramValues[2] = NULL;
+    paramValues[3] = NULL;
+    paramValues[4] = history->has_text_file ? history->text_file_name : NULL;
+    paramValues[5] = history->has_media_file ? history->media_file_name : NULL;
+    paramValues[6] = time_buf;
 
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    // Буферы для числовых значений
+    char pub_type[20], platform[20], status[20];
+    snprintf(pub_type, sizeof(pub_type), "%d", history->publication_type);
+    snprintf(platform, sizeof(platform), "%d", history->platform);
+    snprintf(status, sizeof(status), "%d", history->status);
+
+    paramValues[1] = pub_type;
+    paramValues[2] = platform;
+    paramValues[3] = status;
+
+    // Выполнение с параметрами
+    PGresult *res = PQexecParams(db->conn,
+                                 sql,
+                                 7,           // количество параметров
+                                 NULL,        // типы (или NULL)
+                                 paramValues, // значения
+                                 NULL,        // длины (NULL = строки)
+                                 NULL,        // форматы (NULL = текст)
+                                 0);
+
+    PGresult *res = PQexec(db->conn, sql);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
         printf("Insert history failed: %s\n", PQerrorMessage(db->conn));
         PQclear(res);
         return false;
@@ -105,10 +129,12 @@ bool VTL_user_history_db_Insert(VTL_Database* db, VTL_UserHistory* history) {
 
 // ==================== ShowAll ====================
 
-VTL_AppResult VTL_history_administration_ShowAll(void) {
-    PGresult* res = PQexec(g_db.conn, SELECT_ALL);
+VTL_AppResult VTL_history_administration_ShowAll(void)
+{
+    PGresult *res = PQexec(g_db.conn, SELECT_ALL);
 
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
         printf("Query failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -116,7 +142,8 @@ VTL_AppResult VTL_history_administration_ShowAll(void) {
 
     int rows = PQntuples(res);
     printf("\n=== All publications (%d) ===\n", rows);
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
         print_publication_row(res, i);
     }
 
@@ -126,17 +153,20 @@ VTL_AppResult VTL_history_administration_ShowAll(void) {
 
 // ==================== DownloadAll ====================
 
-VTL_AppResult VTL_history_administration_DownloadAll(void) {
-    PGresult* res = PQexec(g_db.conn, SELECT_ALL);
+VTL_AppResult VTL_history_administration_DownloadAll(void)
+{
+    PGresult *res = PQexec(g_db.conn, SELECT_ALL);
 
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
         printf("Query failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kOk;
     }
 
-    FILE* file = fopen("publication_history_export.csv", "w");
-    if (!file) {
+    FILE *file = fopen("publication_history_export.csv", "w");
+    if (!file)
+    {
         printf("Cannot create export file\n");
         PQclear(res);
         return VTL_res_kErr;
@@ -146,16 +176,17 @@ VTL_AppResult VTL_history_administration_DownloadAll(void) {
     fprintf(file, "id,user_nickname,publication_type,platform,status,text_file,media_file,published_at\n");
 
     int rows = PQntuples(res);
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
         fprintf(file, "%s,%s,%s,%s,%s,%s,%s,%s\n",
-            PQgetvalue(res, i, 0),
-            PQgetvalue(res, i, 1),
-            PQgetvalue(res, i, 2),
-            PQgetvalue(res, i, 3),
-            PQgetvalue(res, i, 4),
-            PQgetisnull(res, i, 5) ? "" : PQgetvalue(res, i, 5),
-            PQgetisnull(res, i, 6) ? "" : PQgetvalue(res, i, 6),
-            PQgetvalue(res, i, 7));
+                PQgetvalue(res, i, 0),
+                PQgetvalue(res, i, 1),
+                PQgetvalue(res, i, 2),
+                PQgetvalue(res, i, 3),
+                PQgetvalue(res, i, 4),
+                PQgetisnull(res, i, 5) ? "" : PQgetvalue(res, i, 5),
+                PQgetisnull(res, i, 6) ? "" : PQgetvalue(res, i, 6),
+                PQgetvalue(res, i, 7));
     }
 
     fclose(file);
@@ -167,14 +198,16 @@ VTL_AppResult VTL_history_administration_DownloadAll(void) {
 
 // ==================== CopyAll ====================
 
-VTL_AppResult VTL_history_administration_CopyAll(void) {
-    const char* sql =
+VTL_AppResult VTL_history_administration_CopyAll(void)
+{
+    const char *sql =
         "CREATE TABLE IF NOT EXISTS publication_history_backup AS "
         "SELECT * FROM publication_history";
 
-    PGresult* res = PQexec(g_db.conn, sql);
+    PGresult *res = PQexec(g_db.conn, sql);
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
         printf("Backup failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -187,10 +220,12 @@ VTL_AppResult VTL_history_administration_CopyAll(void) {
 
 // ==================== DeleteAll ====================
 
-VTL_AppResult VTL_history_administration_DeleteAll(void) {
-    PGresult* res = PQexec(g_db.conn, "DELETE FROM publication_history");
+VTL_AppResult VTL_history_administration_DeleteAll(void)
+{
+    PGresult *res = PQexec(g_db.conn, "DELETE FROM publication_history");
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
         printf("Delete failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -203,18 +238,25 @@ VTL_AppResult VTL_history_administration_DeleteAll(void) {
 
 // ==================== DeleteBeforeTime ====================
 
-VTL_AppResult VTL_history_administration_DeleteBeforeTime(const VTL_Time* p_time) {
+VTL_AppResult VTL_history_administration_DeleteBeforeTime(const VTL_Time *p_time)
+{
     char time_buf[64];
     time_to_sql(p_time, time_buf, sizeof(time_buf));
 
-    char sql[512];
-    snprintf(sql, sizeof(sql),
-        "DELETE FROM publication_history WHERE published_at < '%s'",
-        time_buf);
+    const char *paramValues[1] = {time_buf};
 
-    PGresult* res = PQexec(g_db.conn, sql);
+    PGresult *res = PQexecParams(
+        g_db.conn,
+        "DELETE FROM publication_history WHERE published_at < $1",
+        1,           // количество параметров
+        NULL,        // типы (или NULL)
+        paramValues, // значения
+        NULL,        // длины (NULL = строки)
+        NULL,        // форматы (NULL = текст)
+        0);
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
         printf("Delete failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -227,18 +269,25 @@ VTL_AppResult VTL_history_administration_DeleteBeforeTime(const VTL_Time* p_time
 
 // ==================== DeleteAfterTime ====================
 
-VTL_AppResult VTL_history_administration_DeleteAfterTime(const VTL_Time* p_time) {
+VTL_AppResult VTL_history_administration_DeleteAfterTime(const VTL_Time *p_time)
+{
     char time_buf[64];
     time_to_sql(p_time, time_buf, sizeof(time_buf));
 
-    char sql[512];
-    snprintf(sql, sizeof(sql),
-        "DELETE FROM publication_history WHERE published_at > '%s'",
-        time_buf);
+    const char *paramValues[1] = {time_buf};
 
-    PGresult* res = PQexec(g_db.conn, sql);
+    PGresult *res = PQexecParams(
+        g_db.conn,
+        "DELETE FROM publication_history WHERE published_at > $1",
+        1,           // количество параметров
+        NULL,        // типы (или NULL)
+        paramValues, // значения
+        NULL,        // длины (NULL = строки)
+        NULL,        // форматы (NULL = текст)
+        0);
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
         printf("Delete failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -251,21 +300,28 @@ VTL_AppResult VTL_history_administration_DeleteAfterTime(const VTL_Time* p_time)
 
 // ==================== ShowBeforeTime ====================
 
-VTL_AppResult VTL_history_administration_ShowBeforeTime(const VTL_Time* p_time) {
+VTL_AppResult VTL_history_administration_ShowBeforeTime(const VTL_Time *p_time)
+{
     char time_buf[64];
     time_to_sql(p_time, time_buf, sizeof(time_buf));
 
-    char sql[512];
-    snprintf(sql, sizeof(sql),
+    const char *paramValues[1] = {time_buf};
+
+    PGresult *res = PQexecParams(
+        g_db.conn,
         "SELECT id, user_nickname, publication_type, platform, "
         "status, text_file_name, media_file_name, published_at "
-        "FROM publication_history WHERE published_at < '%s' "
+        "FROM publication_history WHERE published_at < $1 "
         "ORDER BY published_at DESC",
-        time_buf);
+        1,           // количество параметров
+        NULL,        // типы (или NULL)
+        paramValues, // значения
+        NULL,        // длины (NULL = строки)
+        NULL,        // форматы (NULL = текст)
+        0);
 
-    PGresult* res = PQexec(g_db.conn, sql);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
         printf("Query failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -273,7 +329,8 @@ VTL_AppResult VTL_history_administration_ShowBeforeTime(const VTL_Time* p_time) 
 
     int rows = PQntuples(res);
     printf("\n=== Publications before %s (%d) ===\n", time_buf, rows);
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
         print_publication_row(res, i);
     }
 
@@ -283,21 +340,28 @@ VTL_AppResult VTL_history_administration_ShowBeforeTime(const VTL_Time* p_time) 
 
 // ==================== ShowAfterTime ====================
 
-VTL_AppResult VTL_history_administration_ShowAfterTime(const VTL_Time* p_time) {
+VTL_AppResult VTL_history_administration_ShowAfterTime(const VTL_Time *p_time)
+{
     char time_buf[64];
     time_to_sql(p_time, time_buf, sizeof(time_buf));
 
-    char sql[512];
-    snprintf(sql, sizeof(sql),
+    const char *paramValues[1] = {time_buf};
+
+    PGresult *res = PQexecParams(
+        g_db.conn,
         "SELECT id, user_nickname, publication_type, platform, "
         "status, text_file_name, media_file_name, published_at "
-        "FROM publication_history WHERE published_at > '%s' "
+        "FROM publication_history WHERE published_at > $1 "
         "ORDER BY published_at DESC",
-        time_buf);
+        1,           // количество параметров
+        NULL,        // типы (или NULL)
+        paramValues, // значения
+        NULL,        // длины (NULL = строки)
+        NULL,        // форматы (NULL = текст)
+        0);
 
-    PGresult* res = PQexec(g_db.conn, sql);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
         printf("Query failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -305,7 +369,8 @@ VTL_AppResult VTL_history_administration_ShowAfterTime(const VTL_Time* p_time) {
 
     int rows = PQntuples(res);
     printf("\n=== Publications after %s (%d) ===\n", time_buf, rows);
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
         print_publication_row(res, i);
     }
 
@@ -315,18 +380,25 @@ VTL_AppResult VTL_history_administration_ShowAfterTime(const VTL_Time* p_time) {
 
 // ==================== ShowByUser ====================
 
-VTL_AppResult VTL_history_administration_ShowByUser(const VTL_DecryptedUserName user_name) {
-    char sql[512];
-    snprintf(sql, sizeof(sql),
+VTL_AppResult VTL_history_administration_ShowByUser(const VTL_DecryptedUserName user_name)
+{
+    const char *paramValues[1] = {user_name};
+
+    PGresult *res = PQexecParams(
+        g_db.conn,
         "SELECT id, user_nickname, publication_type, platform, "
         "status, text_file_name, media_file_name, published_at "
-        "FROM publication_history WHERE user_nickname = '%s' "
+        "FROM publication_history WHERE user_nickname = $1 "
         "ORDER BY published_at DESC",
-        user_name);
+        1,           // количество параметров
+        NULL,        // типы (или NULL)
+        paramValues, // значения
+        NULL,        // длины (NULL = строки)
+        NULL,        // форматы (NULL = текст)
+        0);
 
-    PGresult* res = PQexec(g_db.conn, sql);
-
-    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+    {
         printf("Query failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
@@ -334,7 +406,8 @@ VTL_AppResult VTL_history_administration_ShowByUser(const VTL_DecryptedUserName 
 
     int rows = PQntuples(res);
     printf("\n=== Publications by @%s (%d) ===\n", user_name, rows);
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
         print_publication_row(res, i);
     }
 
@@ -344,15 +417,22 @@ VTL_AppResult VTL_history_administration_ShowByUser(const VTL_DecryptedUserName 
 
 // ==================== DeleteByUser ====================
 
-VTL_AppResult VTL_history_administration_DeleteByUser(const VTL_DecryptedUserName user_name) {
-    char sql[512];
-    snprintf(sql, sizeof(sql),
-        "DELETE FROM publication_history WHERE user_nickname = '%s'",
-        user_name);
+VTL_AppResult VTL_history_administration_DeleteByUser(const VTL_DecryptedUserName user_name)
+{
+    const char *paramValues[1] = {user_name};
 
-    PGresult* res = PQexec(g_db.conn, sql);
+    PGresult *res = PQexecParams(
+        g_db.conn,
+        "DELETE FROM publication_history WHERE user_nickname = $1",
+        1,           // количество параметров
+        NULL,        // типы (или NULL)
+        paramValues, // значения
+        NULL,        // длины (NULL = строки)
+        NULL,        // форматы (NULL = текст)
+        0);
 
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
         printf("Delete failed: %s\n", PQerrorMessage(g_db.conn));
         PQclear(res);
         return VTL_res_kErr;
