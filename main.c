@@ -1,325 +1,59 @@
-#ifndef _WIN32
-#define _POSIX_C_SOURCE 200809L
-#ifdef __APPLE__
-#define _DARWIN_C_SOURCE
-#endif
-#endif
-
-#include <VTL/VTL.h>
-#include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc.h>
-#include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_compat.h>
-#include <VTL/utils/auth/VTL_utils_auth.h>
-#include <VTL/media_container/encoding/VTL_media_container_encoding.h>
+#include <VTL/media_container/img/VTL_media_container_img_core.h>
+#include <VTL/VTL_app_result.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-
-
-static long detect_cpu_cores(void)
+int main()
 {
-#ifdef _WIN32
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    return (long)si.dwNumberOfProcessors;
-#else
-    long n = sysconf(_SC_NPROCESSORS_ONLN);
-    return (n > 0) ? n : 1;
-#endif
-}
+    printf("VTL Image Processing Demo\n");
 
-
-static char* build_large_asciidoc(size_t target_kb, size_t* out_len)
-{
-
-    const char* fragment =
-            ":author: VTL Team\n"
-            ":revdate: 2026-05-12\n\n"
-            "= Section Heading Level One\n"
-            "== Section Heading Level Two\n\n"
-            "Paragraph with *bold*, _italic_, `mono`, ~sub~ and ^sup^ inline plus "
-            "[line-through]#strikethrough# and a link:https://example.com[example] "
-            "ссылка плюс cross-reference <<intro,intro>> в одном предложении.\n\n"
-            "NOTE: This is an admonition paragraph with *bold inside*.\n"
-            "WARNING: Another admonition with _italic_ markup inside it.\n\n"
-            "* First bullet with *strong* inside\n"
-            "* Second bullet with _emphasis_ inside\n"
-            "** Nested bullet level two with `mono`\n"
-            ". Numbered item one\n"
-            ". Numbered item two\n\n"
-            "[source,c]\n"
-            "----\n"
-            "int main(void) { return 0; }\n"
-            "----\n\n"
-            "____\n"
-            "A quoted block with *bold* and _italic_ inside the quotes.\n"
-            "____\n\n"
-            "// A comment line that should be ignored by the converter.\n\n"
-            "Final paragraph with all kinds of markers: *b* _i_ `m` ~s~ ^p^ "
-            "[line-through]#strike# link:url[txt] <<ref>> mixed together.\n\n";
-
-    size_t frag_len = strlen(fragment);
-    size_t target = target_kb * 1024;
-    char* buf = (char*)malloc(target + frag_len + 1);
-    if (!buf) return NULL;
-
-    size_t pos = 0;
-    while (pos < target) {
-        memcpy(buf + pos, fragment, frag_len);
-        pos += frag_len;
-    }
-    buf[pos] = '\0';
-    *out_len = pos;
-    return buf;
-}
-
-
-/* Демонстрация модулей из PR #14 (Дмитрий):
- *   - VTL_auth (ed25519 sign/verify): генерируем keypair, проверяем round-trip
- *     подписи на коротком challenge.
- *   - VTL_vencode (FFmpeg-based encoder): вызываем Init/Deinit с дефолтной
- *     конфигурацией — без реального encoding, только проверка что либа линкуется
- *     и базовый init/teardown не падает. Реальный encoding включится когда
- *     video-pipeline будет к этому готов. */
-static void demo_pr14_modules(void)
-{
-    printf("\n=== Демо новых модулей PR #14 (auth + encoding) ===\n");
-
-    VTL_auth_keypair_t keypair;
-    int rc = VTL_auth_generate_keypair(&keypair);
-    if (rc != VTL_AUTH_SUCCESS) {
-        printf("  VTL_auth: ошибка генерации keypair (rc=%d)\n", rc);
-    } else {
-        const unsigned char challenge[] = "vtl-auth-demo-challenge";
-        const size_t challenge_len = sizeof(challenge) - 1;
-        unsigned char signature[VTL_AUTH_SIGNATURE_SIZE];
-        VTL_auth_client_respond(signature, challenge, challenge_len, &keypair);
-        int ok = VTL_auth_server_verify(signature, challenge, challenge_len,
-                                        keypair.public_key);
-        printf("  VTL_auth: keypair сгенерирован, подпись round-trip = %s\n",
-               ok ? "OK" : "FAIL");
+    // Инициализация контекста
+    VTL_ImageContext* ctx = VTL_img_context_Init();
+    if (!ctx) {
+        printf("Failed to initialize VTL Image Context\n");
+        return 1;
     }
 
-    VTL_vencode_Config cfg = { 0 };
-    cfg.log_level = 0;
-    cfg.thread_count = 0;
-    cfg.flags = VTL_VENCODE_FLAG_NONE;
-    VTL_AppResult vres = VTL_vencode_Init(&cfg);
-    printf("  VTL_vencode: init = %d (%s)\n",
-           (int)vres, vres == VTL_res_kOk ? "OK" : "noop/err");
-    VTL_vencode_Deinit();
-}
-
-
-static void demo_asciidoc_parser(void)
-{
-    const char* sample =
-            ":author: Demo\n\n"
-            "= Demo Title\n\n"
-            "Plain text with *bold*, _italic_, `mono`, ~sub~, ^sup^, "
-            "[line-through]#strike# and link:url[link] markers.\n"
-            "NOTE: admonition example.\n";
-    VTL_publication_Text src = { (char*)sample, strlen(sample) };
-
-    VTL_publication_MarkedText* marked = NULL;
-    VTL_AppResult res = VTL_asciidoc_ParseTextParallel(&src, &marked);
-    if (res != VTL_res_kOk || !marked) {
-        printf("AsciiDoc демо: ошибка парсинга: %d\n", (int)res);
-        return;
+    // Загрузка изображения
+    const char* input_path = "./test_images/2-1.jpg";
+    printf("Loading image: %s\n", input_path);
+    VTL_AppResult res = VTL_img_LoadImage(input_path, ctx);
+    if (res != VTL_res_kOk) {
+        printf("Failed to load image '%s', error code: %d\n", input_path, (int)res);
+        VTL_img_context_Cleanup(ctx);
+        return 1;
     }
 
-    printf("=== Демо AsciiDoc-парсера (в памяти) ===\n");
-    printf("Байт исходника: %zu, разобрано на %zu частей\n",
-           src.length, marked->length);
-    for (size_t i = 0; i < marked->length; ++i) {
-        const VTL_publication_marked_text_Part* p = &marked->parts[i];
-        const char* label = "обычный";
-        if (p->type & VTL_TEXT_MODIFICATION_BOLD)          label = "ЖИРНЫЙ";
-        else if (p->type & VTL_TEXT_MODIFICATION_ITALIC)   label = "КУРСИВ";
-        else if (p->type & VTL_TEXT_MODIFICATION_STRIKETHROUGH) label = "ЗАЧЁРКНУТ";
-
-        printf("  [%zu] %-10s длина=%2zu \"", i, label, p->length);
-        size_t to_print = p->length > 50 ? 50 : p->length;
-        for (size_t k = 0; k < to_print; ++k) {
-            char c = p->text[k];
-            putchar((c == '\n') ? ' ' : c);
-        }
-        if (p->length > to_print) printf("...");
-        printf("\"\n");
-    }
-
-    free(marked->parts);
-    free(marked);
-}
-
-
-static void bench_asciidoc_scanners(size_t doc_size_kb, size_t iterations)
-{
-    size_t src_len = 0;
-    char* buf = build_large_asciidoc(doc_size_kb, &src_len);
-    if (!buf) {
-        printf("bench: не удалось выделить память\n");
-        return;
-    }
-    VTL_publication_Text src = { buf, src_len };
-
-    long cpu_cores = detect_cpu_cores();
-    printf("\n=== Параллелизм на уровне сканеров (15 сканеров, %ld ядер CPU, документ %zu KB, %zu итераций) ===\n",
-           cpu_cores, doc_size_kb, iterations);
-
-    double t_seq = VTL_asciidoc_BenchSequential(&src, iterations);
-    double t_par = VTL_asciidoc_BenchParallel(&src, iterations);
-    double speedup = (t_par > 0.0) ? (t_seq / t_par) : 0.0;
-    double efficiency = speedup / (double)cpu_cores;
-
-    printf("  Последовательно : %.4f с\n", t_seq);
-    printf("  Параллельно     : %.4f с\n", t_par);
-    printf("  Ускорение       : %.3fx\n", speedup);
-    printf("  Эффективность   : %.1f%%  (Sp/N, где N=%ld ядер)\n",
-           efficiency * 100.0, cpu_cores);
-
-    free(buf);
-}
-
-
-static void bench_asciidoc_batch(size_t doc_size_kb, size_t files, size_t iterations)
-{
-    size_t src_len = 0;
-    char* buf = build_large_asciidoc(doc_size_kb, &src_len);
-    if (!buf) {
-        return;
-    }
-
-
-    const char* path = "_bench_input.adoc";
-    FILE* f = fopen(path, "wb");
-    if (!f) { free(buf); return; }
-    fwrite(buf, 1, src_len, f);
-    fclose(f);
-    free(buf);
-
-    const char** paths = (const char**)malloc(files * sizeof(char*));
-    VTL_publication_MarkedText** out =
-            (VTL_publication_MarkedText**)calloc(files, sizeof(*out));
-    if (!paths || !out) { free(paths); free(out); remove(path); return; }
-    for (size_t i = 0; i < files; ++i) paths[i] = path;
-
-    printf("\n=== Параллелизм пакета файлов (%zu файлов по %zu KB, %zu итераций) ===\n",
-           files, doc_size_kb, iterations);
-
-    double t0 = vtl_monotonic_seconds();
-    for (size_t k = 0; k < iterations; ++k) {
-        VTL_asciidoc_ParseFileBatchSequential(paths, files, out);
-        for (size_t i = 0; i < files; ++i) {
-            if (out[i]) { free(out[i]->parts); free(out[i]); out[i] = NULL; }
-        }
-    }
-    double t_seq = vtl_monotonic_seconds() - t0;
-
-    t0 = vtl_monotonic_seconds();
-    for (size_t k = 0; k < iterations; ++k) {
-        VTL_asciidoc_ParseFileBatchParallel(paths, files, out);
-        for (size_t i = 0; i < files; ++i) {
-            if (out[i]) { free(out[i]->parts); free(out[i]); out[i] = NULL; }
-        }
-    }
-    double t_par = vtl_monotonic_seconds() - t0;
-
-    long cpu_cores = detect_cpu_cores();
-
-    double effective_n = (double)((files < (size_t)cpu_cores) ? files : (size_t)cpu_cores);
-    double speedup = (t_par > 0.0) ? (t_seq / t_par) : 0.0;
-    double efficiency = speedup / effective_n;
-
-    printf("  Последовательно : %.4f с\n", t_seq);
-    printf("  Параллельно     : %.4f с\n", t_par);
-    printf("  Ускорение       : %.3fx\n", speedup);
-    printf("  Эффективность   : %.1f%%  (Sp/N, где N=%.0f эффективных воркеров)\n",
-           efficiency * 100.0, effective_n);
-
-    free(out);
-    free(paths);
-    remove(path);
-}
-
-
-int main(int argc, char** argv)
-{
-#ifdef _WIN32
-    /* Кириллица в printf — UTF-8 в исходниках. Дефолтная codepage консоли
-     * (cmd/PowerShell) — OEM (cp866 в RU-локали), отсюда крякозябры.
-     * Переключаем codepage процесса на UTF-8 — нативно для Windows Terminal
-     * и работает в любом host'е, кто умеет UTF-8 (а это все актуальные). */
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
-#endif
-
-    srand((unsigned)time(NULL));
-
-
-    int use_mediawiki = 0;
-    const char* text_path = NULL;
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "--mediawiki") == 0 || strcmp(argv[i], "--wiki") == 0) {
-            use_mediawiki = 1;
-        } else if (argv[i][0] != '-') {
-            text_path = argv[i];
-        }
-    }
-    if (!text_path) {
-        text_path = use_mediawiki ? "text.wiki" : "text.md";
-    }
-    VTL_publication_marked_text_MarkupType markup =
-        use_mediawiki ? VTL_markup_type_kMediaWiki : VTL_markup_type_kTelegramMD;
-
-    /* demo_pr14_modules() зовёт VTL_vencode_Init → FFmpeg
-     * (av_log_set_level, avformat_network_init). FFmpeg сейчас заглушен
-     * в cmake → unresolved-символы → SIGSEGV. Закомментировано чтобы бинарь
-     * успел дойти до Text Pipeline (MediaWiki). Раскомментировать, когда
-     * вернётся рабочая FFmpeg-сборка. */
-    /* demo_pr14_modules(); */
-    demo_asciidoc_parser();
-    bench_asciidoc_scanners(512, 50);
-    bench_asciidoc_batch(128, 8, 20);
-
-    const char* audio_files[] = {
-            "audio_ariel.mp3",
-            "audio_styuardessa.mp3",
-            "audio_xanadu.mp3"
+    // Настройка фильтра (черно-белый)
+    VTL_ImageFilter black_white_filter = {
+            .name = "Grayscale",
+            .description = "Converts the image to black and white",
+            .filter_desc = "format=gray",
+            .apply = NULL
     };
-    int pick = rand() % 3;
 
-    printf("\n=== Text Pipeline (%s, %s) ===\n",
-           use_mediawiki ? "MediaWiki" : "TelegramMD", text_path);
-    /* VTL_PubicateMarkedText зовёт scheduler/db (libpq) и
-     * content_platform/{tg,w} (libcurl) — оба заглушены в cmake,
-     * вызовы становятся unresolved и сегфолтят. Закомментировано, чтобы
-     * бинарь дожил до return и ctest зафиксировал зелёный mediawiki regex. */
-    VTL_AppResult res_text = VTL_res_kOk;
-    /* res_text = VTL_PubicateMarkedText(text_path,
-     *                                   VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG,
-     *                                   markup); */
-    printf("Text: %d (%s)\n\n", res_text,
-           res_text == VTL_res_kOk ? "OK" : "ERROR");
-
-
-    if (use_mediawiki) {
-        printf("Audio: skipped (--mediawiki mode)\n");
-        return res_text;
+    // Применение фильтра
+    printf("Applying grayscale filter...\n");
+    res = VTL_img_ApplyFilter(ctx, &black_white_filter);
+    if (res != VTL_res_kOk) {
+        printf("Failed to apply filter, error code: %d\n", (int)res);
+        VTL_img_context_Cleanup(ctx);
+        return 1;
     }
 
-    printf("=== Audio Pipeline [%d]: %s ===\n", pick, audio_files[pick]);
-    VTL_AppResult res_audio = VTL_PubicateAudioWithMarkedText(
-            audio_files[pick], text_path,
-            markup,
-            VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG);
-    printf("Audio: %d (%s)\n", res_audio,
-           res_audio == VTL_res_kOk ? "OK" : "ERROR");
+    // Сохранение результата
+    const char* output_path = "./test_images/output.jpg";
+    printf("Saving processed image to: %s\n", output_path);
+    res = VTL_img_SaveImage(output_path, ctx);
+    if (res != VTL_res_kOk) {
+        printf("Failed to save image to '%s', error code: %d\n", output_path, (int)res);
+        VTL_img_context_Cleanup(ctx);
+        return 1;
+    }
 
-    return (res_text != VTL_res_kOk) ? res_text : res_audio;
+    printf("Successfully processed image and saved to %s\n", output_path);
+
+    // Очистка ресурсов
+    VTL_img_context_Cleanup(ctx);
+
+    return 0;
 }
