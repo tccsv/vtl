@@ -25,16 +25,30 @@ VTL_AppResult VTL_telegram_ParseTextParallel(const VTL_publication_Text* src,
                                               VTL_publication_MarkedText** out);
 
 
-// MarkedText → Telegram MarkdownV2-текст. Один поток, потому что
-// сериализация — это линейная сборка, она и так O(N) и упирается в memcpy.
+// MarkedText → Telegram MarkdownV2-текст в один поток.
 VTL_AppResult VTL_telegram_SerializeText(const VTL_publication_MarkedText* src,
                                          VTL_publication_Text** out);
 
+// MarkedText → Telegram MarkdownV2-текст в N потоках (single-pass + compact).
+// Каждый поток одним проходом пишет свой чанк в свой сегмент общего буфера
+// по upper-bound смещениям; в конце memmove убирает "дырки" между сегментами.
+// Результат побайтно идентичен SerializeText. На малых блоках автоматически
+// делегирует sequential — overhead pthread_create перевешивает выгоду.
+// Подробное описание архитектуры — в _convert.h рядом с реализацией.
+VTL_AppResult VTL_telegram_SerializeTextParallel(const VTL_publication_MarkedText* src,
+                                                  VTL_publication_Text** out);
 
-// Замер времени двух режимов, секунды (wall-clock, не CPU-time).
+
+// Замер времени двух режимов парсинга, секунды (wall-clock, не CPU-time).
 // iterations — сколько прогонов усреднить.
 double VTL_telegram_BenchSequential(const VTL_publication_Text* src, size_t iterations);
 double VTL_telegram_BenchParallel(const VTL_publication_Text* src, size_t iterations);
+
+// То же для сериализации (обратной операции).
+double VTL_telegram_BenchSerializeSequential(const VTL_publication_MarkedText* src,
+                                              size_t iterations);
+double VTL_telegram_BenchSerializeParallel(const VTL_publication_MarkedText* src,
+                                            size_t iterations);
 
 
 #ifdef __cplusplus

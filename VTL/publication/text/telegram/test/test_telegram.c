@@ -73,13 +73,32 @@ static int run_case(const char* name, const char* input)
     printf("[%s] input %zu B → %zu parts\n", name, src.length, a->length);
     print_marked(a);
 
-    /* round-trip: MarkedText обратно в Telegram MD */
+    /* round-trip: MarkedText обратно в Telegram MD (sequential) */
     VTL_publication_Text* round = NULL;
     if (VTL_telegram_SerializeText(a, &round) != VTL_res_kOk || !round) {
         printf("[%s] FAIL: serialize\n", name);
         free(a->parts); free(a); free(b->parts); free(b);
         return 1;
     }
+
+    /* инвариант: параллельная сериализация даёт побайтно тот же выход */
+    VTL_publication_Text* round_par = NULL;
+    if (VTL_telegram_SerializeTextParallel(a, &round_par) != VTL_res_kOk || !round_par) {
+        printf("[%s] FAIL: serialize parallel\n", name);
+        free(round->text); free(round);
+        free(a->parts); free(a); free(b->parts); free(b);
+        return 1;
+    }
+    if (round->length != round_par->length ||
+        memcmp(round->text, round_par->text, round->length) != 0) {
+        printf("[%s] FAIL: serialize seq != par (seq %zuB par %zuB)\n",
+               name, round->length, round_par->length);
+        free(round->text); free(round);
+        free(round_par->text); free(round_par);
+        free(a->parts); free(a); free(b->parts); free(b);
+        return 1;
+    }
+
     printf("[%s] round-trip %zu B: \"", name, round->length);
     size_t to_print = round->length > 80 ? 80 : round->length;
     for (size_t k = 0; k < to_print; ++k) putchar(round->text[k]);
@@ -87,6 +106,7 @@ static int run_case(const char* name, const char* input)
     printf("\"\n");
 
     free(round->text); free(round);
+    free(round_par->text); free(round_par);
     free(a->parts); free(a);
     free(b->parts); free(b);
     return 0;
@@ -159,7 +179,7 @@ int main(void)
         }
     }
 
-    /* бенчмарк: 512 KB × 100 итераций */
+    /* бенчмарк: 512 KB × 100 итераций — парсинг */
     {
         size_t blen = 0;
         char* big = build_big(
@@ -170,15 +190,45 @@ int main(void)
         if (big) {
             VTL_publication_Text src = { big, blen };
             const size_t iters = 100;
+
+            const size_t p_parse = 3;
+
             double t_seq = VTL_telegram_BenchSequential(&src, iters);
             double t_par = VTL_telegram_BenchParallel(&src, iters);
             double speedup = (t_par > 0.0) ? (t_seq / t_par) : 0.0;
+            double eff_pct = 100.0 * speedup / (double)6;
 
-            printf("\n=== Bench: %zu KB × %zu iterations ===\n",
+            printf("\n=== Bench PARSE: %zu KB × %zu iterations ===\n",
                    blen / 1024, iters);
             printf("  Sequential : %.4f s\n", t_seq);
             printf("  Parallel   : %.4f s\n", t_par);
-            printf("  Speedup    : %.2fx (3 сканера)\n", speedup);
+            printf("  Speedup    : %.2fx (p = %zu сканера)\n", speedup, p_parse);
+            printf("  Efficiency : %.1f%% (E = S / p)\n", eff_pct);
+
+            /* бенч сериализации на том же тексте — сначала распарсим,
+             * чтобы получить большой MarkedText, потом гоняем serialize */
+            VTL_publication_MarkedText* big_marked = NULL;
+            if (VTL_telegram_ParseTextSequential(&src, &big_marked) == VTL_res_kOk
+                && big_marked) {
+
+                const size_t p_ser = 4;
+
+                double t_seq_s = VTL_telegram_BenchSerializeSequential(big_marked, iters);
+                double t_par_s = VTL_telegram_BenchSerializeParallel(big_marked, iters);
+                double sp_s = (t_par_s > 0.0) ? (t_seq_s / t_par_s) : 0.0;
+                double eff_s_pct = 100.0 * sp_s / (double)6;
+
+                printf("\n=== Bench SERIALIZE: %zu parts × %zu iterations ===\n",
+                       big_marked->length, iters);
+                printf("  Sequential : %.4f s\n", t_seq_s);
+                printf("  Parallel   : %.4f s  (single-pass + compact)\n", t_par_s);
+                printf("  Speedup    : %.2fx (p = %zu потока)\n", sp_s, p_ser);
+                printf("  Efficiency : %.1f%% (E = S / p)\n", eff_s_pct);
+
+                free(big_marked->parts);
+                free(big_marked);
+            }
+
             free(big);
         }
     }

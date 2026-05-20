@@ -1,47 +1,46 @@
-# Диаграммы модуля `VTL/publication/text` для draw.io
+# Диаграммы модуля `VTL/publication/text`
 
-Все диаграммы — в формате **PlantUML** (`.puml`). Это самый удобный способ
-держать редактируемые UML-диаграммы рядом с кодом и одновременно открывать их
-в draw.io.
+В папке два эквивалентных по содержанию набора диаграмм:
 
-## Файлы
+| Файл | Формат | Когда использовать |
+| --- | --- | --- |
+| `VTL_text_module.drawio` | draw.io (native XML, 3 страницы) | открыть двойным кликом в draw.io / app.diagrams.net, редактировать визуально |
+| `01_text_module_overview.puml` | PlantUML | редактировать как текст в IDE; рендерить локально (`plantuml`) или вставить в draw.io |
+| `02_processor_architecture.puml` | PlantUML | то же самое |
+| `03_data_flow.puml` | PlantUML | то же самое |
 
-| Файл | Что показывает |
-| --- | --- |
-| `01_text_module_overview.puml` | Общая архитектура модуля: ядро данных, фасад `text_op`, процессоры форматов (markdown / telegram / asciidoc / bbcode), инфраструктура IO |
-| `02_processor_architecture.puml` | Унифицированная внутренняя структура одного процессора (одинакова для markdown / telegram / asciidoc): `Marker → MarkerList → ScanContext → Scanners → Parser → Converter / Serializer` + threads-shim |
-| `03_data_flow.puml` | Поток данных: `RawText → MarkerList → MarkedText → Output` |
+## Содержание
 
-## Как открыть в draw.io
+Оба формата покрывают одни и те же три диаграммы:
 
-### Способ 1 — вставить как фигуру в существующий лист
+1. **Overview** — общая архитектура модуля: ядро данных, фасад `text_op`, процессоры форматов (markdown / telegram / html / asciidoc / bbcode), инфраструктура IO. `asciidoc` помечен как нереализованный в фасаде (в `Init` его пока нет).
+2. **Processor template** — унифицированная внутренняя структура одного процессора (одинакова для markdown / telegram / html / asciidoc): `MarkerKind → Marker → MarkerList → ScanContext → Scanners → Parser → Converter / Serializer / ThreadsShim`.
+3. **Data flow** — поток данных: `RawText → MarkerList → MarkedText → Output` с разделением на Parse phase (может быть параллельной) и Serialize phase (всегда один поток).
 
-1. Открой draw.io (desktop или [app.diagrams.net](https://app.diagrams.net)).
-2. **Arrange → Insert → Advanced → PlantUML…**
-3. Открой нужный `.puml`, скопируй содержимое в окно (включая `@startuml … @enduml`).
-4. Нажми **Insert** — диаграмма отрисуется как редактируемая группа фигур.
+## draw.io
 
-### Способ 2 — открыть как отдельную диаграмму
+### Открыть `.drawio` напрямую
 
-1. **Extras → Edit Diagram…** (Ctrl+E).
-2. Перейди на вкладку **PlantUML**.
-3. Вставь содержимое `.puml`.
-4. **OK** — лист заменится диаграммой.
+1. Двойной клик на `VTL_text_module.drawio` (если установлен [draw.io Desktop](https://github.com/jgraph/drawio-desktop/releases)), либо
+2. Открыть [app.diagrams.net](https://app.diagrams.net) → **File → Open from → Device** → выбрать файл.
 
-### Альтернатива — экспорт в PNG/SVG без draw.io
+Внизу окна — три вкладки (`1. Overview`, `2. Processor template`, `3. Data flow`), переключаться между ними обычным кликом.
 
-Если нужен только рендер (без редактирования), можно скормить файл
-PlantUML-серверу:
+### Вставить `.puml` как шаблон в свой документ
+
+1. **Arrange → Insert → Advanced → PlantUML…**
+2. Скопировать содержимое нужного `.puml` (с `@startuml … @enduml`), вставить, **Insert**.
+
+## PlantUML
 
 ```sh
-plantuml 01_text_module_overview.puml         # локально, нужен plantuml.jar
+plantuml 01_text_module_overview.puml          # локально (нужен plantuml.jar)
 # или онлайн: https://www.plantuml.com/plantuml -> вставить текст
 ```
 
-## Почему PlantUML, а не нативный `.drawio` XML
+## Чем отличаются `.drawio` и `.puml`
 
-- draw.io понимает PlantUML «из коробки» и превращает его в редактируемые
-  фигуры.
-- Нативный `.drawio` XML для class-диаграмм в несколько раз более громоздкий
-  и неудобен для правки руками / в diff'ах.
-- `.puml` ложится в git как обычный текст и осмысленно диффится.
+- `.drawio` — визуальный редактор, удобно для презентаций и финального оформления. Хранит точные координаты, цвета, стили линий. Хуже диффится в git.
+- `.puml` — текстовый формат, компактный, отлично диффится, легко править в IDE. draw.io умеет его импортировать, но как одну собранную фигуру, а не как набор индивидуально редактируемых элементов.
+
+Оба формата поддерживаются — используй то, что удобнее для текущей задачи.

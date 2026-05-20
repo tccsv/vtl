@@ -8,6 +8,8 @@
 #include <VTL/publication/text/telegram/VTL_publication_text_op_telegram.h>
 #include <VTL/publication/text/telegram/VTL_publication_text_op_telegram_threads.h>
 
+#include <stdlib.h>
+
 
 // Sequential: парс в одном потоке + конвертация
 VTL_AppResult VTL_telegram_ParseTextSequential(const VTL_publication_Text* src,
@@ -49,9 +51,15 @@ VTL_AppResult VTL_telegram_SerializeText(const VTL_publication_MarkedText* src,
     return VTL_telegram_SerializeFromMarkedText(src, out);
 }
 
+VTL_AppResult VTL_telegram_SerializeTextParallel(const VTL_publication_MarkedText* src,
+                                                  VTL_publication_Text** out)
+{
+    return VTL_telegram_SerializeFromMarkedTextParallel(src, out);
+}
+
 
 // ============================================================
-// бенчмарки
+// бенчмарки парсинга
 // измеряется только парсинг (без конвертации в MarkedText), потому что
 // именно парсинг — единственное, что распараллелено
 // ============================================================
@@ -80,6 +88,45 @@ double VTL_telegram_BenchParallel(const VTL_publication_Text* src, size_t iterat
         VTL_telegram_MarkerListInit(&markers);
         VTL_telegram_ParseDocumentParallel(src, &markers);
         VTL_telegram_MarkerListFree(&markers);
+    }
+    return vtl_tg_monotonic_seconds() - start;
+}
+
+
+// ============================================================
+// бенчмарки сериализации (обратное направление)
+// ============================================================
+
+double VTL_telegram_BenchSerializeSequential(const VTL_publication_MarkedText* src,
+                                              size_t iterations)
+{
+    if (!src || iterations == 0) return 0.0;
+
+    double start = vtl_tg_monotonic_seconds();
+    for (size_t i = 0; i < iterations; ++i) {
+        VTL_publication_Text* out = NULL;
+        VTL_telegram_SerializeFromMarkedText(src, &out);
+        if (out) {
+            free(out->text);
+            free(out);
+        }
+    }
+    return vtl_tg_monotonic_seconds() - start;
+}
+
+double VTL_telegram_BenchSerializeParallel(const VTL_publication_MarkedText* src,
+                                            size_t iterations)
+{
+    if (!src || iterations == 0) return 0.0;
+
+    double start = vtl_tg_monotonic_seconds();
+    for (size_t i = 0; i < iterations; ++i) {
+        VTL_publication_Text* out = NULL;
+        VTL_telegram_SerializeFromMarkedTextParallel(src, &out);
+        if (out) {
+            free(out->text);
+            free(out);
+        }
     }
     return vtl_tg_monotonic_seconds() - start;
 }

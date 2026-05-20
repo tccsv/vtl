@@ -8,6 +8,8 @@
 #include <VTL/VTL.h>
 #include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc.h>
 #include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_compat.h>
+#include <VTL/publication/text/telegram/VTL_publication_text_op_telegram.h>
+#include <VTL/publication/text/telegram/VTL_publication_text_op_telegram_threads.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -158,6 +160,125 @@ static void bench_asciidoc_scanners(size_t doc_size_kb, size_t iterations)
 }
 
 
+/* Большой Telegram MarkdownV2 текст в памяти. Без файлов на диске —
+ * чистый замер парсинга. Чем длиннее каждый прогон, тем меньше шумит
+ * overhead на создание потоков и точнее видно speedup. */
+static char* build_large_telegram(size_t target_kb, size_t* out_len)
+{
+    const char* fragment =
+        "Hello *world* and _everyone_ around here! "
+        "Some ~deleted text~ next to *bold one* and again _italic phrase_. "
+        "Plain run of words without any markup. "
+        "Edge case: snake_case_var should not be parsed as italic. "
+        "Numbers like 1*2*3 must stay literal too. "
+        "Escaped \\* and \\_ and \\~ should also stay literal. "
+        "Combined *one _two_ three* run plus ~strike one~ closing.\n";
+
+    size_t frag_len = strlen(fragment);
+    size_t target = target_kb * 1024;
+    char* buf = (char*)malloc(target + frag_len + 1);
+    if (!buf) return NULL;
+
+    size_t pos = 0;
+    while (pos < target) {
+        memcpy(buf + pos, fragment, frag_len);
+        pos += frag_len;
+    }
+    buf[pos] = '\0';
+    *out_len = pos;
+    return buf;
+}
+
+
+static void demo_telegram_parser(void)
+{
+    const char* sample =
+        "Hello *world*, this is _italic_ and ~strike~ inline. "
+        "Mixed *bold _and italic_ together* plus snake_case_var "
+        "should stay literal. Escaped \\* stays as is.\n";
+    VTL_publication_Text src = { (char*)sample, strlen(sample) };
+
+    VTL_publication_MarkedText* marked = NULL;
+    VTL_AppResult res = VTL_telegram_ParseTextParallel(&src, &marked);
+    if (res != VTL_res_kOk || !marked) {
+        printf("Telegram MD демо: ошибка парсинга: %d\n", (int)res);
+        return;
+    }
+
+    printf("\n=== Демо Telegram MarkdownV2-парсера ===\n");
+    printf("Байт исходника: %zu, разобрано на %zu частей\n",
+           src.length, marked->length);
+    for (size_t i = 0; i < marked->length; ++i) {
+        const VTL_publication_marked_text_Part* p = &marked->parts[i];
+        char label[32] = "обычный";
+        if (p->type) {
+            label[0] = '\0';
+            if (p->type & VTL_TEXT_MODIFICATION_BOLD)          strcat(label, "B");
+            if (p->type & VTL_TEXT_MODIFICATION_ITALIC)        strcat(label, "I");
+            if (p->type & VTL_TEXT_MODIFICATION_STRIKETHROUGH) strcat(label, "S");
+        }
+        printf("  [%zu] %-10s длина=%2zu \"", i, label, p->length);
+        size_t to_print = p->length > 60 ? 60 : p->length;
+        for (size_t k = 0; k < to_print; ++k) {
+            char c = p->text[k];
+            putchar((c == '\n') ? ' ' : c);
+        }
+        if (p->length > to_print) printf("...");
+        printf("\"\n");
+    }
+
+    /* round-trip: пробуем собрать обратно в Telegram MD и убедиться, что
+     * сериализатор живой. По длине сошлось — значит экранирование/теги ок. */
+    VTL_publication_Text* roundtrip = NULL;
+    if (VTL_telegram_SerializeText(marked, &roundtrip) == VTL_res_kOk && roundtrip) {
+        printf("Round-trip: %zu → %zu байт. Первые 80: \"", src.length, roundtrip->length);
+        size_t to_print = roundtrip->length > 80 ? 80 : roundtrip->length;
+        for (size_t k = 0; k < to_print; ++k) {
+            char c = roundtrip->text[k];
+            putchar((c == '\n') ? ' ' : c);
+        }
+        if (roundtrip->length > to_print) printf("...");
+        printf("\"\n");
+        free(roundtrip->text);
+        free(roundtrip);
+    }
+
+    free(marked->parts);
+    free(marked);
+}
+
+
+static void bench_telegram_scanners(size_t doc_size_kb, size_t iterations)
+{
+    size_t src_len = 0;
+    char* buf = build_large_telegram(doc_size_kb, &src_len);
+    if (!buf) {
+        printf("bench: не удалось выделить память\n");
+        return;
+    }
+    VTL_publication_Text src = { buf, src_len };
+
+    long cpu_cores = detect_cpu_cores();
+    printf("\n=== Параллелизм Telegram MD-сканеров (3 сканера, %ld ядер CPU, документ %zu KB, %zu итераций) ===\n",
+           cpu_cores, doc_size_kb, iterations);
+
+    double t_seq = VTL_telegram_BenchSequential(&src, iterations);
+    double t_par = VTL_telegram_BenchParallel(&src, iterations);
+    double speedup = (t_par > 0.0) ? (t_seq / t_par) : 0.0;
+    /* у нас 3 сканера, поэтому теоретический потолок — 3, но не больше числа ядер */
+    double effective_n = (cpu_cores < 3) ? (double)cpu_cores : 3.0;
+    double efficiency = speedup / effective_n;
+
+    printf("  Последовательно : %.4f с\n", t_seq);
+    printf("  Параллельно     : %.4f с\n", t_par);
+    printf("  Ускорение       : %.3fx\n", speedup);
+    printf("  Эффективность   : %.1f%%  (Sp/N, где N=%.0f — min(3 сканера, ядра))\n",
+           efficiency * 100.0, effective_n);
+
+    free(buf);
+}
+
+
 static void bench_asciidoc_batch(size_t doc_size_kb, size_t files, size_t iterations)
 {
     size_t src_len = 0;
@@ -236,6 +357,9 @@ int main(void)
     demo_asciidoc_parser();
     bench_asciidoc_scanners(512, 50);
     bench_asciidoc_batch(128, 8, 20);
+
+    demo_telegram_parser();
+    bench_telegram_scanners(512, 100);
 
     const char* audio_files[] = {
         "audio_ariel.mp3",
