@@ -10,6 +10,7 @@ extern "C"
 
 #include <VTL/user/VTL_user_data.h>
 #include <VTL/user/history/VTL_user_history.h>
+#include <VTL/user/VTL_error_data.h>
 
 
 #ifdef __cplusplus
