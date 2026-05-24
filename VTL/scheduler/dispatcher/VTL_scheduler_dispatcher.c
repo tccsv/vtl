@@ -11,6 +11,7 @@
 
 #include <VTL/content_platform/tg/VTL_content_platform_tg_net.h>
 #include <VTL/content_platform/reddit/VTL_content_platform_reddit_net.h>
+#include <VTL/content_platform/vimeo/VTL_content_platform_vimeo_net.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -180,14 +181,104 @@ static VTL_AppResult send_vk(const VTL_scheduler_Post* post)
 }
 
 
+/*
+ * Vimeo-драйвер. Ожидает post->content_type == VTL_content_kFilePath —
+ * путь к видеофайлу. Токен берётся из env VIMEO_ACCESS_TOKEN.
+ * Опциональные поля title / description / tags_csv берутся из metadata.
+ */
+static VTL_AppResult send_vimeo(const VTL_scheduler_Post* post)
+{
+    if (!post->content || post->content[0] == '\0') {
+        fprintf(stderr, "[dispatcher] Vimeo post id=%lld: content (video path) is empty\n",
+                post->id);
+        return VTL_res_kInvalidParamErr;
+    }
+
+    VTL_scheduler_MetaVimeo meta;
+    memset(&meta, 0, sizeof(meta));
+    if (post->metadata && post->metadata[0] != '\0') {
+        if (VTL_scheduler_meta_DeserializeVimeo(post->metadata, &meta) != VTL_res_kOk) {
+            fprintf(stderr, "[dispatcher] Vimeo post id=%lld: bad metadata\n", post->id);
+            return VTL_res_kErr;
+        }
+    }
+
+    VTL_AppResult res;
+
+    if (meta.title[0] != '\0' || meta.description[0] != '\0' || meta.tags_csv[0] != '\0') {
+        /* Есть хотя бы одно из полей — используем расширенный вариант загрузки */
+        char tmp_title[VTL_TMP_PATH_LEN];
+        char tmp_desc[VTL_TMP_PATH_LEN];
+        char tmp_tags[VTL_TMP_PATH_LEN];
+
+        make_tmp_path(tmp_title, sizeof(tmp_title), post->id * 10 + 1);
+        make_tmp_path(tmp_desc,  sizeof(tmp_desc),  post->id * 10 + 2);
+        make_tmp_path(tmp_tags,  sizeof(tmp_tags),  post->id * 10 + 3);
+
+        /* Пишем временные файлы только если поле непустое */
+        int has_title = (meta.title[0] != '\0');
+        int has_desc  = (meta.description[0] != '\0');
+        int has_tags  = (meta.tags_csv[0] != '\0');
+
+        if (has_title) {
+            FILE *f = fopen(tmp_title, "wb");
+            if (!f) return VTL_res_kFileOpenErr;
+            fwrite(meta.title, 1, strlen(meta.title), f);
+            fclose(f);
+        }
+        if (has_desc) {
+            FILE *f = fopen(tmp_desc, "wb");
+            if (!f) { if (has_title) remove(tmp_title); return VTL_res_kFileOpenErr; }
+            fwrite(meta.description, 1, strlen(meta.description), f);
+            fclose(f);
+        }
+        if (has_tags) {
+            FILE *f = fopen(tmp_tags, "wb");
+            if (!f) {
+                if (has_title) remove(tmp_title);
+                if (has_desc)  remove(tmp_desc);
+                return VTL_res_kFileOpenErr;
+            }
+            fwrite(meta.tags_csv, 1, strlen(meta.tags_csv), f);
+            fclose(f);
+        }
+
+        if (has_desc && has_tags) {
+            /* video + text(description) + tags */
+            res = VTL_content_platform_vimeo_video_w_text_and_tags_SendNow(
+                    post->content,
+                    has_desc  ? tmp_desc  : NULL,
+                    has_tags  ? tmp_tags  : NULL);
+        } else if (has_desc) {
+            /* video + text(description) */
+            res = VTL_content_platform_vimeo_video_w_text_SendNow(
+                    post->content, tmp_desc);
+        } else {
+            /* только видео — title/tags устанавливаем отдельно через meta API */
+            res = VTL_content_platform_vimeo_video_SendNow(post->content);
+        }
+
+        if (has_title) remove(tmp_title);
+        if (has_desc)  remove(tmp_desc);
+        if (has_tags)  remove(tmp_tags);
+    } else {
+        /* metadata пустой — просто загружаем видео */
+        res = VTL_content_platform_vimeo_video_SendNow(post->content);
+    }
+
+    return res;
+}
+
+
 VTL_AppResult VTL_scheduler_dispatcher_Send(VTL_scheduler_Repo*        repo,
                                             const VTL_scheduler_Post*  post)
 {
     if (!post) return VTL_res_kInvalidParamErr;
 
     fprintf(stdout, "[dispatcher] sending post id=%lld sn=%s\n",
-            post->id, post->sn_type == VTL_sn_kTG ? "TG" :
-                      post->sn_type == VTL_sn_kReddit ? "REDDIT" : "VK");
+            post->id, post->sn_type == VTL_sn_kTG     ? "TG"    :
+                      post->sn_type == VTL_sn_kReddit  ? "REDDIT":
+                      post->sn_type == VTL_sn_kVimeo   ? "VIMEO" : "VK");
 
     VTL_AppResult res;
     switch (post->sn_type) {
@@ -199,6 +290,9 @@ VTL_AppResult VTL_scheduler_dispatcher_Send(VTL_scheduler_Repo*        repo,
             break;
         case VTL_sn_kVK:
             res = send_vk(post);
+            break;
+        case VTL_sn_kVimeo:
+            res = send_vimeo(post);
             break;
         default:
             fprintf(stderr, "[dispatcher] post id=%lld: unknown sn_type\n",

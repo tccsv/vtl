@@ -14,6 +14,7 @@ typedef enum _VTL_scheduler_SnType
     VTL_sn_kTG      = 0,   /* Telegram  */
     VTL_sn_kReddit  = 1,   /* Reddit    */
     VTL_sn_kVK      = 2,   /* ВКонтакте */
+    VTL_sn_kVimeo   = 3,   /* Vimeo     */
     VTL_sn_kUnknown = -1
 } VTL_scheduler_SnType;
 
@@ -59,6 +60,13 @@ typedef struct _VTL_scheduler_MetaVK
 {
     long long peer_id;
 } VTL_scheduler_MetaVK;
+
+typedef struct _VTL_scheduler_MetaVimeo
+{
+    char title[256];        /* Название видео (опционально) */
+    char description[1024]; /* Описание (опционально)       */
+    char tags_csv[512];     /* Теги через запятую (опционально) */
+} VTL_scheduler_MetaVimeo;
 
 #ifdef __cplusplus
 }

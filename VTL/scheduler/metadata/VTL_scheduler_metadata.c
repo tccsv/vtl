@@ -30,7 +30,7 @@
 
 
 VTL_AppResult VTL_scheduler_meta_DeserializeTG(const char*           json_str,
-                                                VTL_scheduler_MetaTG* out)
+                                               VTL_scheduler_MetaTG* out)
 {
     if (!json_str || !out) return VTL_res_kInvalidParamErr;
     memset(out, 0, sizeof(*out));
@@ -58,7 +58,7 @@ VTL_AppResult VTL_scheduler_meta_DeserializeTG(const char*           json_str,
 }
 
 VTL_AppResult VTL_scheduler_meta_DeserializeReddit(const char*               json_str,
-                                                    VTL_scheduler_MetaReddit* out)
+                                                   VTL_scheduler_MetaReddit* out)
 {
     if (!json_str || !out) return VTL_res_kInvalidParamErr;
     memset(out, 0, sizeof(*out));
@@ -86,7 +86,7 @@ VTL_AppResult VTL_scheduler_meta_DeserializeReddit(const char*               jso
 }
 
 VTL_AppResult VTL_scheduler_meta_DeserializeVK(const char*           json_str,
-                                                VTL_scheduler_MetaVK* out)
+                                               VTL_scheduler_MetaVK* out)
 {
     if (!json_str || !out) return VTL_res_kInvalidParamErr;
     memset(out, 0, sizeof(*out));
@@ -157,6 +157,51 @@ char* VTL_scheduler_meta_SerializeVK(const VTL_scheduler_MetaVK* meta)
     JSON_Object* root     = json_value_get_object(root_val);
 
     json_object_set_number(root, "peer_id", (double)meta->peer_id);
+
+    char* serialized = json_serialize_to_string(root_val);
+    json_value_free(root_val);
+
+    if (!serialized) return NULL;
+    char* result = strdup(serialized);
+    json_free_serialized_string(serialized);
+    return result;
+}
+
+
+VTL_AppResult VTL_scheduler_meta_DeserializeVimeo(const char*              json_str,
+                                                  VTL_scheduler_MetaVimeo* out)
+{
+    if (!json_str || !out) return VTL_res_kInvalidParamErr;
+    memset(out, 0, sizeof(*out));
+
+    JSON_Value* root_val = json_parse_string(json_str);
+    if (!root_val) {
+        fprintf(stderr, "[scheduler_meta] Vimeo: failed to parse JSON: %.80s\n",
+                json_str);
+        return VTL_res_kErr;
+    }
+
+    JSON_Object* root = json_value_get_object(root_val);
+    if (!root) { json_value_free(root_val); return VTL_res_kErr; }
+
+    COPY_STR(out->title,       json_object_get_string(root, "title"),       sizeof(out->title));
+    COPY_STR(out->description, json_object_get_string(root, "description"), sizeof(out->description));
+    COPY_STR(out->tags_csv,    json_object_get_string(root, "tags_csv"),    sizeof(out->tags_csv));
+
+    json_value_free(root_val);
+    return VTL_res_kOk;
+}
+
+char* VTL_scheduler_meta_SerializeVimeo(const VTL_scheduler_MetaVimeo* meta)
+{
+    if (!meta) return NULL;
+
+    JSON_Value*  root_val = json_value_init_object();
+    JSON_Object* root     = json_value_get_object(root_val);
+
+    json_object_set_string(root, "title",       meta->title);
+    json_object_set_string(root, "description", meta->description);
+    json_object_set_string(root, "tags_csv",    meta->tags_csv);
 
     char* serialized = json_serialize_to_string(root_val);
     json_value_free(root_val);

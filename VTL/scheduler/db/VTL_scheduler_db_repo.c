@@ -24,22 +24,20 @@
 
 static VTL_scheduler_SnType sn_from_str(const char *s) {
     if (!s) return VTL_sn_kUnknown;
-    if (strcmp(s, "TG") == 0) return VTL_sn_kTG;
+    if (strcmp(s, "TG") == 0)     return VTL_sn_kTG;
     if (strcmp(s, "REDDIT") == 0) return VTL_sn_kReddit;
-    if (strcmp(s, "VK") == 0) return VTL_sn_kVK;
+    if (strcmp(s, "VK") == 0)     return VTL_sn_kVK;
+    if (strcmp(s, "VIMEO") == 0)  return VTL_sn_kVimeo;
     return VTL_sn_kUnknown;
 }
 
 static const char *sn_to_str(VTL_scheduler_SnType t) {
     switch (t) {
-        case VTL_sn_kTG:
-            return "TG";
-        case VTL_sn_kReddit:
-            return "REDDIT";
-        case VTL_sn_kVK:
-            return "VK";
-        default:
-            return "UNKNOWN";
+        case VTL_sn_kTG:     return "TG";
+        case VTL_sn_kReddit: return "REDDIT";
+        case VTL_sn_kVK:     return "VK";
+        case VTL_sn_kVimeo:  return "VIMEO";
+        default:             return "UNKNOWN";
     }
 }
 
@@ -116,7 +114,7 @@ static void row_to_post(PGresult *res, int row, VTL_scheduler_Post *p) {
 
 
 VTL_AppResult VTL_scheduler_repo_Open(VTL_scheduler_Repo *repo,
-                                       VTL_db_Credentals *creds) {
+                                      VTL_db_Credentals *creds) {
     if (!repo || !creds) return VTL_res_kInvalidParamErr;
 
     repo->conn = VTL_connect_to_db(creds);
