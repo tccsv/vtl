@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Флаги для части текста после маркера */
-static VTL_publication_text_modification_Flags vtl_apply_marker(VTL_discord_MarkerKind kind, VTL_publication_text_modification_Flags cur) {
+static VTL_publication_text_modification_Flags VTL_discord_ApplyMarker(VTL_discord_MarkerKind kind, VTL_publication_text_modification_Flags cur) {
     switch (kind) {
         case VTL_discord_marker_kBoldStart:
             return cur | VTL_TEXT_MODIFICATION_BOLD;
@@ -55,7 +54,7 @@ VTL_AppResult VTL_discord_ConvertToMarkedText(const VTL_publication_Text *src, c
             p->length = m->pos - pos;
             p->type = flags;
         }
-        flags = vtl_apply_marker(m->kind, flags);
+        flags = VTL_discord_ApplyMarker(m->kind, flags);
         pos = m->pos + m->length;
     }
     if (pos < src->length) {
@@ -74,8 +73,7 @@ VTL_AppResult VTL_discord_ConvertToMarkedText(const VTL_publication_Text *src, c
     return VTL_res_kOk;
 }
 
-/* Открывающий/закрывающий тег по флагам */
-static void vtl_tags(VTL_publication_text_modification_Flags f, const char **open, size_t *olen, const char **close, size_t *clen) {
+static void VTL_discord_GetTags(VTL_publication_text_modification_Flags f, const char **open, size_t *olen, const char **close, size_t *clen) {
     int b = (f & VTL_TEXT_MODIFICATION_BOLD) != 0;
     int i = (f & VTL_TEXT_MODIFICATION_ITALIC) != 0;
     int s = (f & VTL_TEXT_MODIFICATION_STRIKETHROUGH) != 0;
@@ -139,13 +137,11 @@ VTL_AppResult VTL_discord_ConvertFromMarkedText(const VTL_publication_MarkedText
     if (!src || !out) {
         return VTL_res_kInvalidParamErr;
     }
-
-    /* Считаем максимальный размер */
     size_t total = 0;
     for (size_t i = 0; i < src->length; ++i) {
         const char *o, *c;
         size_t ol, cl;
-        vtl_tags(src->parts[i].type, &o, &ol, &c, &cl);
+        VTL_discord_GetTags(src->parts[i].type, &o, &ol, &c, &cl);
         total += ol + src->parts[i].length + cl;
     }
 
@@ -164,7 +160,7 @@ VTL_AppResult VTL_discord_ConvertFromMarkedText(const VTL_publication_MarkedText
         const VTL_publication_marked_text_Part *part = &src->parts[i];
         const char *o, *c;
         size_t ol, cl;
-        vtl_tags(part->type, &o, &ol, &c, &cl);
+        VTL_discord_GetTags(part->type, &o, &ol, &c, &cl);
         memcpy(p, o, ol);
         p += ol;
         memcpy(p, part->text, part->length);

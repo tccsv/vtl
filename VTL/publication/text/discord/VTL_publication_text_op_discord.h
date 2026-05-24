@@ -1,5 +1,5 @@
-#ifndef _VTL_PUBLICATION_TEXT_OP_DISCORD_H
-#define _VTL_PUBLICATION_TEXT_OP_DISCORD_H
+#ifndef VTL_PUBLICATION_TEXT_OP_DISCORD_H
+#define VTL_PUBLICATION_TEXT_OP_DISCORD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,15 +50,12 @@ typedef struct {
 
 #define VTL_DISCORD_SCANNER_COUNT 5
 
-/* Discord MD -> VTL_publication_MarkedText */
 VTL_AppResult VTL_discord_ParseTextSequential(const VTL_publication_Text *src, VTL_publication_MarkedText **out);
 VTL_AppResult VTL_discord_ParseTextParallel(const VTL_publication_Text *src, VTL_publication_MarkedText **out);
-
-/* VTL_publication_MarkedText -> Discord MD */
 VTL_AppResult VTL_discord_SerializeToText(const VTL_publication_MarkedText *src, VTL_publication_Text **out);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _VTL_PUBLICATION_TEXT_OP_DISCORD_H */
+#endif /* VTL_PUBLICATION_TEXT_OP_DISCORD_H */
