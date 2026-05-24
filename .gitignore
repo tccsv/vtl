@@ -1,7 +1,6 @@
 # Build artifacts
 build/
 build-*/
-app/
 *.o
 
 # IDE / tooling
