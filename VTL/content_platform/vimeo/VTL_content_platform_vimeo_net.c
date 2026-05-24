@@ -168,7 +168,7 @@ static char *VTL_content_platform_vimeo_HttpJson(const char *method,
     char auth_hdr[VTL_VIMEO_AUTH_HDR_BUF];
     if (VTL_content_platform_vimeo_BuildUrl(
             auth_hdr, sizeof(auth_hdr),
-            "Authorization: bearer %s", token) != VTL_res_kOk)
+            "Authorization: Bearer %s", token) != VTL_res_kOk)
         return NULL;
 
     CURL *curl = curl_easy_init();
@@ -212,7 +212,7 @@ static char *VTL_content_platform_vimeo_HttpGet(const char *url,
     char auth_hdr[VTL_VIMEO_AUTH_HDR_BUF];
     if (VTL_content_platform_vimeo_BuildUrl(
             auth_hdr, sizeof(auth_hdr),
-            "Authorization: bearer %s", token) != VTL_res_kOk)
+            "Authorization: Bearer %s", token) != VTL_res_kOk)
         return NULL;
 
     HttpRequest req = {0};
@@ -240,7 +240,7 @@ static VTL_AppResult VTL_content_platform_vimeo_HttpDelete(const char *url,
     char auth_hdr[VTL_VIMEO_AUTH_HDR_BUF];
     if (VTL_content_platform_vimeo_BuildUrl(
             auth_hdr, sizeof(auth_hdr),
-            "Authorization: bearer %s", token) != VTL_res_kOk)
+            "Authorization: Bearer %s", token) != VTL_res_kOk)
         return VTL_res_kErr;
 
     HttpRequest req = {0};
@@ -259,7 +259,7 @@ static VTL_AppResult VTL_content_platform_vimeo_HttpPut(const char *url,
     char auth_hdr[VTL_VIMEO_AUTH_HDR_BUF];
     if (VTL_content_platform_vimeo_BuildUrl(
             auth_hdr, sizeof(auth_hdr),
-            "Authorization: bearer %s", token) != VTL_res_kOk)
+            "Authorization: Bearer %s", token) != VTL_res_kOk)
         return VTL_res_kErr;
 
     HttpRequest req = {0};
@@ -396,18 +396,20 @@ static VTL_AppResult VTL_content_platform_vimeo_DoUpload(
     if (!resp) return VTL_res_vimeo_kHttpPostError;
 
     JSON_Value *rv = json_parse_string(resp);
-    free(resp);
-    if (!rv) return VTL_res_vimeo_kJsonParseError;
+    if (!rv) { free(resp); return VTL_res_vimeo_kJsonParseError; }
 
     JSON_Object *ro = json_value_get_object(rv);
     JSON_Object *upro = json_object_get_object(ro, "upload");
     const char *link = upro ? json_object_get_string(upro, "upload_link") : NULL;
 
     if (!link) {
-        fprintf(stderr, "[VTL/vimeo] Missing upload_link in response\n");
+        /* Логируем весь ответ чтобы видеть ошибку от API */
+        fprintf(stderr, "[VTL/vimeo] Missing upload_link in response: %.512s\n", resp);
+        free(resp);
         json_value_free(rv);
         return VTL_res_vimeo_kMissingUploadLink;
     }
+    free(resp);
 
     /* Копия upload_link нужна потому, что json_value_free инвалидирует строку
      * parson'а. Буфер 2048 — ссылка ~1400 байт. */
