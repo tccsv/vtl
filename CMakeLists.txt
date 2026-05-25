@@ -66,6 +66,11 @@ if(APPLE)
     )
 endif()
 
+# На Linux FFmpeg линкуется статически (см. Dependencies-Linux.cmake:
+# --enable-static --disable-shared). Всё внутри VTL exe — нет .so рядом,
+# копировать нечего. libpq остаётся SHARED (его .so target ставится в app/
+# через LIBRARY_OUTPUT_DIRECTORY автоматом).
+
 enable_testing()
 add_subdirectory(VTL/test)
 
