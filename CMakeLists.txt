@@ -34,6 +34,7 @@ add_subdirectory(VTL/media_container)
 add_subdirectory(VTL/media_container/encoding)
 add_subdirectory(VTL/content_platform)
 add_subdirectory(VTL/history_administration)
+add_subdirectory(VTL/log_analyzer)
 
 find_package(Threads REQUIRED)
 
