@@ -8,6 +8,8 @@ extern VTL_AppResult VTL_vencode_EncodeFrameVulkan(VTL_vencode_Context*, const u
 
 extern VTL_AppResult VTL_vencode_CloseCPU(VTL_vencode_Context*);
 extern VTL_AppResult VTL_vencode_CloseVulkan(VTL_vencode_Context*);
+extern VTL_AppResult VTL_vencode_EncodeAVFrameCPU(VTL_vencode_Context* ctx, AVFrame* f);
+extern VTL_AppResult VTL_vencode_EncodeAVFrameVulkan(VTL_vencode_Context *ctx, AVFrame* frame);
 
 VTL_vencode_Context* VTL_vencode_Open(VTL_vencode_Codec codec, VTL_vencode_Api api, const char* outfile)
 {
