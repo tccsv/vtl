@@ -82,3 +82,12 @@ add_test(
 set_tests_properties(VTL_mediawiki_pipeline PROPERTIES
     PASS_REGULAR_EXPRESSION "Text Pipeline \\(MediaWiki"
 )
+
+add_test(
+    NAME VTL_asciidoc_pipeline
+    COMMAND ${AppName} --asciidoc ${CMAKE_SOURCE_DIR}/text.adoc
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+set_tests_properties(VTL_asciidoc_pipeline PROPERTIES
+    PASS_REGULAR_EXPRESSION "Text Pipeline \\(AsciiDoc"
+)

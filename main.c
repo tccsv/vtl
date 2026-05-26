@@ -263,19 +263,30 @@ int main(int argc, char** argv)
 
 
     int use_mediawiki = 0;
+    int use_asciidoc = 0;
     const char* text_path = NULL;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--mediawiki") == 0 || strcmp(argv[i], "--wiki") == 0) {
             use_mediawiki = 1;
+        } else if (strcmp(argv[i], "--asciidoc") == 0 || strcmp(argv[i], "--adoc") == 0) {
+            use_asciidoc = 1;
         } else if (argv[i][0] != '-') {
             text_path = argv[i];
         }
     }
     if (!text_path) {
-        text_path = use_mediawiki ? "text.wiki" : "text.md";
+        text_path = use_mediawiki ? "text.wiki"
+                  : use_asciidoc  ? "text.adoc"
+                                  : "text.md";
     }
     VTL_publication_marked_text_MarkupType markup =
-        use_mediawiki ? VTL_markup_type_kMediaWiki : VTL_markup_type_kTelegramMD;
+          use_mediawiki ? VTL_markup_type_kMediaWiki
+        : use_asciidoc  ? VTL_markup_type_kAsciiDoc
+                        : VTL_markup_type_kTelegramMD;
+    const char* markup_name =
+          use_mediawiki ? "MediaWiki"
+        : use_asciidoc  ? "AsciiDoc"
+                        : "TelegramMD";
 
     demo_pr14_modules();
     demo_asciidoc_parser();
@@ -289,8 +300,7 @@ int main(int argc, char** argv)
     };
     int pick = rand() % 3;
 
-    printf("\n=== Text Pipeline (%s, %s) ===\n",
-           use_mediawiki ? "MediaWiki" : "TelegramMD", text_path);
+    printf("\n=== Text Pipeline (%s, %s) ===\n", markup_name, text_path);
     VTL_AppResult res_text = VTL_PubicateMarkedText(text_path,
                                                     VTL_CONTENT_PLATFORM_W | VTL_CONTENT_PLATFORM_TG,
                                                     markup);
@@ -298,8 +308,8 @@ int main(int argc, char** argv)
            res_text == VTL_res_kOk ? "OK" : "ERROR");
 
 
-    if (use_mediawiki) {
-        printf("Audio: skipped (--mediawiki mode)\n");
+    if (use_mediawiki || use_asciidoc) {
+        printf("Audio: skipped (--%s mode)\n", use_mediawiki ? "mediawiki" : "asciidoc");
         return res_text;
     }
 

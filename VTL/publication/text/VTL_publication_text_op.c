@@ -3,6 +3,7 @@
 #include <VTL/publication/text/telegram/VTL_publication_text_op_telegram.h>
 #include <VTL/publication/text/markdown/VTL_publication_text_op_markdown.h>
 #include <VTL/publication/text/html/VTL_publication_text_op_html.h>
+#include <VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc.h>
 #include <VTL/VTL_publication_markup_text_flags.h>
 #include <stdlib.h>
 #include <string.h>
@@ -248,6 +249,8 @@ VTL_AppResult VTL_publication_marked_text_Init(
             return VTL_publication_marked_text_InitFromBB(pp_marked_text, p_src_text);
         case VTL_markup_type_kMediaWiki:
             return VTL_publication_marked_text_InitFromMediaWiki(pp_marked_text, p_src_text);
+        case VTL_markup_type_kAsciiDoc:
+            return VTL_asciidoc_ParseTextParallel(p_src_text, pp_marked_text);
         default:
             return VTL_publication_marked_text_InitFromRegularText(pp_marked_text, p_src_text);
     }

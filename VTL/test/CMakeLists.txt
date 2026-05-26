@@ -32,6 +32,10 @@ add_executable(${VTL_CMAKE_TESTS_MW_APP_NAME}
     ${CMAKE_SOURCE_DIR}/VTL/publication/text/html/VTL_publication_text_op_html_data.c
     ${CMAKE_SOURCE_DIR}/VTL/publication/text/html/VTL_publication_text_op_html_scan.c
     ${CMAKE_SOURCE_DIR}/VTL/publication/text/html/VTL_publication_text_op_html_convert.c
+    ${CMAKE_SOURCE_DIR}/VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc.c
+    ${CMAKE_SOURCE_DIR}/VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_data.c
+    ${CMAKE_SOURCE_DIR}/VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_scan.c
+    ${CMAKE_SOURCE_DIR}/VTL/publication/text/asciidoc/VTL_publication_text_op_asciidoc_convert.c
     ${CMAKE_SOURCE_DIR}/VTL/publication/text/VTL_publication_markup_text_flags_check.c
     ${CMAKE_SOURCE_DIR}/VTL/publication/text/VTL_publication_text_op.c
 )
