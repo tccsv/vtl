@@ -6,6 +6,9 @@ extern VTL_vencode_Context* VTL_vencode_OpenVulkan(VTL_vencode_Codec, const char
 extern VTL_AppResult VTL_vencode_EncodeFrameCPU(VTL_vencode_Context*, const uint8_t*, size_t, uint32_t, uint32_t);
 extern VTL_AppResult VTL_vencode_EncodeFrameVulkan(VTL_vencode_Context*, const uint8_t*, size_t, uint32_t, uint32_t);
 
+extern VTL_AppResult VTL_vencode_EncodeAVFrameCPU(VTL_vencode_Context*, AVFrame*);
+extern VTL_AppResult VTL_vencode_EncodeAVFrameVulkan(VTL_vencode_Context*, AVFrame*);
+
 extern VTL_AppResult VTL_vencode_CloseCPU(VTL_vencode_Context*);
 extern VTL_AppResult VTL_vencode_CloseVulkan(VTL_vencode_Context*);
 

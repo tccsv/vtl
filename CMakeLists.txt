@@ -66,6 +66,33 @@ if(APPLE)
     )
 endif()
 
+# Отдельный standalone-бинарь для AsciiDoc-части (Тимофеенко): demo парсера + 2 бенча.
+add_executable(VTL_timofeenko VTL_timofeenko/main.c)
+
+target_link_libraries(VTL_timofeenko PRIVATE
+    VTL_scheduler
+    VTL_content_platform
+    VTL_publication
+    VTL_media_container
+    VTL_media_container_encoding
+    VTL_history_administration
+    VTL_user
+    VTL_utils
+    VTL_utils_auth
+    Threads::Threads
+)
+
+if(UNIX)
+    target_link_libraries(VTL_timofeenko PRIVATE dl)
+endif()
+
+if(APPLE)
+    add_custom_command(TARGET VTL_timofeenko POST_BUILD
+        COMMAND "${VTL_CODESIGN}" --force --sign - "$<TARGET_FILE:VTL_timofeenko>"
+        VERBATIM
+    )
+endif()
+
 # На Linux FFmpeg линкуется статически (см. Dependencies-Linux.cmake:
 # --enable-static --disable-shared). Всё внутри VTL exe — нет .so рядом,
 # копировать нечего. libpq остаётся SHARED (его .so target ставится в app/
