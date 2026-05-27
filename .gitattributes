@@ -1,0 +1,33 @@
+# Shell-скрипты и configure обязаны иметь LF — иначе на Linux shebang
+# `#!/bin/sh\r` ломается, /bin/sh говорит "configure: not found".
+# Без этого Windows git с core.autocrlf=true конвертит в CRLF на checkout.
+
+*.sh                                          text eol=lf
+*.bash                                        text eol=lf
+
+# FFmpeg / curl / libpq configure-скрипты (без расширения, но shell)
+external_sources/ffmpeg/configure             text eol=lf
+external_sources/ffmpeg/ffbuild/*.sh          text eol=lf
+external_sources/ffmpeg/ffbuild/libversion.sh text eol=lf
+external_sources/ffmpeg/ffbuild/version.sh    text eol=lf
+external_sources/ffmpeg/ffbuild/pkgconfig_generate.sh text eol=lf
+external_sources/curl/configure               text eol=lf
+external_sources/libpq/configure              text eol=lf
+
+# Generated PG headers / common — LF (linux toolchain их парсит)
+cmake/libpq/generated-linux/**/*.h            text eol=lf
+cmake/libpq/generated-linux/**/*.c            text eol=lf
+
+# Бинарные артефакты — не трогать
+external_libs/openssl/lib/*.a                 binary
+external_libs/**/*.so                         binary
+external_libs/**/*.so.*                       binary
+external_libs/**/*.dylib                      binary
+external_libs/**/*.lib                        binary
+external_libs/**/*.dll                        binary
+external_libs/**/*.dll.a                      binary
+
+# Windows-batch — наоборот, CRLF
+*.bat                                         text eol=crlf
+*.cmd                                         text eol=crlf
+*.ps1                                         text eol=crlf
