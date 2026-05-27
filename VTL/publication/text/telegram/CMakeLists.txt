@@ -62,7 +62,7 @@ endif()
 # ============================================================
 # Тестовая программа: проверка корректности + бенчмарк
 # ============================================================
-add_executable(vtl_telegram_test test/test_telegram.c)
+add_executable(vtl_telegram_test test/VTL_publication_text_op_telegram_test.c)
 target_link_libraries(vtl_telegram_test PRIVATE VTL_telegram)
 
 if(MSVC)

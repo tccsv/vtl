@@ -55,7 +55,7 @@ endif()
 # ============================================================
 # Тестовая программа: проверка корректности + бенчмарк
 # ============================================================
-add_executable(vtl_markdown_test test/test_markdown.c)
+add_executable(vtl_markdown_test test/VTL_publication_text_op_markdown_test.c)
 target_link_libraries(vtl_markdown_test PRIVATE VTL_markdown)
 
 if(MSVC)
