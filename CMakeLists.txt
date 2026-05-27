@@ -56,6 +56,17 @@ if(UNIX)
     target_link_libraries(${AppName} PRIVATE dl)
 endif()
 
+# main_timofeenko — standalone-демо моей зоны (AsciiDoc-парсер).
+# Линкуется только со standalone target VTL_asciidoc (см. одноимённый
+# CMakeLists в VTL/publication/text/asciidoc/) — никакого FFmpeg/curl/libpq.
+# EXCLUDE_FROM_ALL: target не собирается с дефолтным `cmake --build`,
+# только когда явно тянется через main_timofeenko.
+add_subdirectory(VTL/publication/text/asciidoc
+                 ${CMAKE_BINARY_DIR}/VTL_asciidoc_standalone
+                 EXCLUDE_FROM_ALL)
+add_executable(main_timofeenko main_timofeenko.c)
+target_link_libraries(main_timofeenko PRIVATE VTL_asciidoc)
+
 # Apple Silicon strict-проверка подписи — без ad-hoc codesign бинарь
 # падает с 'zsh: killed' при запуске.
 if(APPLE)
