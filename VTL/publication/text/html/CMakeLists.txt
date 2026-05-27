@@ -62,7 +62,7 @@ endif()
 # ============================================================
 # Тестовая программа: проверка корректности + бенчмарк
 # ============================================================
-add_executable(vtl_html_test test/test_html.c)
+add_executable(vtl_html_test test/VTL_publication_text_op_html_test.c)
 target_link_libraries(vtl_html_test PRIVATE VTL_html)
 
 if(MSVC)
