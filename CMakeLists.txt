@@ -34,6 +34,7 @@ add_subdirectory(VTL/media_container)
 add_subdirectory(VTL/media_container/encoding)
 add_subdirectory(VTL/content_platform)
 add_subdirectory(VTL/history_administration)
+add_subdirectory(VTL/bot)
 
 find_package(Threads REQUIRED)
 
@@ -67,6 +68,15 @@ add_subdirectory(VTL/publication/text/asciidoc
 add_executable(main_timofeenko main_timofeenko.c)
 target_link_libraries(main_timofeenko PRIVATE VTL_asciidoc)
 
+# Standalone-exe бота. HTTP-клиент докомпилируем сюда напрямую, чтобы не тянуть
+# весь VTL_utils. EXCLUDE_FROM_ALL — собирается явной целью:
+#   cmake --build build --target main_firyulin
+add_executable(main_firyulin EXCLUDE_FROM_ALL
+    main_firyulin.c
+    VTL/utils/curl/VTL_utils_curl_http_client.c
+)
+target_link_libraries(main_firyulin PRIVATE VTL_bot)
+
 # Apple Silicon strict-проверка подписи — без ad-hoc codesign бинарь
 # падает с 'zsh: killed' при запуске.
 if(APPLE)
@@ -84,6 +94,9 @@ endif()
 
 enable_testing()
 add_subdirectory(VTL/test)
+
+# Юнит-тест бота (цель vtl_bot_test собирается в VTL/bot/CMakeLists).
+add_test(NAME VTL_bot_store_test COMMAND vtl_bot_test)
 
 add_test(
     NAME VTL_mediawiki_pipeline

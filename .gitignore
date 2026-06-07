@@ -22,3 +22,6 @@ text.md.*
 
 # Test inputs
 test_audios/
+
+# Локальное хранилище бота (задачи/напоминания)
+bot_data.json
