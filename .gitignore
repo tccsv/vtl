@@ -1,8 +1,12 @@
 # Build artifacts
 build/
 build-*/
+build_schulgin/
 app/
 *.o
+
+# VK bot runtime store (создаётся при запуске)
+vkbot_data.json
 
 # IDE / tooling
 .claude/
