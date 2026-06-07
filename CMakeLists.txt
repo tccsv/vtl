@@ -34,6 +34,7 @@ add_subdirectory(VTL/media_container)
 add_subdirectory(VTL/media_container/encoding)
 add_subdirectory(VTL/content_platform)
 add_subdirectory(VTL/history_administration)
+add_subdirectory(VTL/vkbot)
 
 find_package(Threads REQUIRED)
 
@@ -67,6 +68,14 @@ add_subdirectory(VTL/publication/text/asciidoc
 add_executable(main_timofeenko main_timofeenko.c)
 target_link_libraries(main_timofeenko PRIVATE VTL_asciidoc)
 
+# Standalone-exe VK-бота. По тем же причинам докомпилируем HTTP-клиент сюда.
+#   cmake --build build --target main_schulgin
+add_executable(main_schulgin EXCLUDE_FROM_ALL
+    main_schulgin.c
+    VTL/utils/curl/VTL_utils_curl_http_client.c
+)
+target_link_libraries(main_schulgin PRIVATE VTL_vkbot)
+
 # Apple Silicon strict-проверка подписи — без ad-hoc codesign бинарь
 # падает с 'zsh: killed' при запуске.
 if(APPLE)
@@ -84,6 +93,9 @@ endif()
 
 enable_testing()
 add_subdirectory(VTL/test)
+
+# Юнит-тест VK-бота (цель vtl_vkbot_test собирается в VTL/vkbot/CMakeLists).
+add_test(NAME VTL_vkbot_store_test COMMAND vtl_vkbot_test)
 
 add_test(
     NAME VTL_mediawiki_pipeline
