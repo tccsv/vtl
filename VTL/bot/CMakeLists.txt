@@ -1,11 +1,13 @@
-# VTL_bot — модуль Telegram-бота. Зависит только от parson (JSON) и libcurl (HTTP).
+# VTL_bot — модуль Telegram-бота (пульт публикации VTL). Сама библиотека лёгкая:
+# зависит только от parson (JSON) и libcurl (HTTP). Реальные функции публикации
+# проекта прокидываются снаружи через VTL_bot_Handlers (см. main_firyulin.c),
+# поэтому весь VTL сюда не тянется и юнит-тест собирается в изоляции.
 
 add_library(VTL_bot STATIC
     VTL_bot.c
     api/VTL_bot_api.c
-    store/VTL_bot_store.c
+    session/VTL_bot_session.c
     command/VTL_bot_command.c
-    reminder/VTL_bot_reminder.c
 )
 
 target_include_directories(VTL_bot PUBLIC ${CMAKE_SOURCE_DIR})
@@ -35,10 +37,10 @@ else()
     )
 endif()
 
-# Тест store-логики. Использует мини-фреймворк из VTL/test. Регистрация в ctest —
-# в корневом CMakeLists, после enable_testing().
+# Тест логики сессии (выбор платформ/формата). Использует мини-фреймворк из
+# VTL/test. Регистрация в ctest — в корневом CMakeLists, после enable_testing().
 add_executable(vtl_bot_test
-    test/VTL_bot_store_test.c
+    test/VTL_bot_session_test.c
     ${CMAKE_SOURCE_DIR}/VTL/test/VTL_test_data.c
 )
 target_link_libraries(vtl_bot_test PRIVATE VTL_bot)

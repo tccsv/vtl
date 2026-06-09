@@ -1,15 +1,21 @@
 /*
- * main_firyulin.c — standalone-запуск Telegram-бота (модуль VTL/bot).
+ * main_firyulin.c — Telegram-бот как пульт публикации VTL.
+ *
+ * Бот сам ничего не публикует: он принимает выбор платформ и формата разметки
+ * и дёргает функции основного проекта. Здесь generic-цикл бота (модуль VTL/bot)
+ * связывается с реальными точками входа VTL — VTL_PubicateMarkedText и
+ * VTL_PubicateAudioWithMarkedText.
+ *
  *   cmake --build build --target main_firyulin
  */
 
 #include <VTL/bot/VTL_bot.h>
-#include <VTL/bot/VTL_bot_data.h>
+#include <VTL/publication/VTL_publication.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(int argc, char** argv)
+int main(void)
 {
     /* stdout без буферизации — вывод сразу. _IONBF, не _IOLBF: size 0 валиден на MSVC. */
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -20,12 +26,17 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    const char* store_path = (argc > 1) ? argv[1] : VTL_BOT_DEFAULT_STORE;
+    /* Точки входа в функционал проекта: бот вызовет их по командам
+     * /publish и /publish_audio с выбранными пользователем флагами. */
+    VTL_bot_Handlers handlers;
+    handlers.publish_text  = VTL_PubicateMarkedText;
+    handlers.publish_audio = VTL_PubicateAudioWithMarkedText;
 
     printf("===========================================\n");
-    printf("  VTL Telegram-бот: задачи + напоминания\n");
+    printf("  VTL Telegram-бот: пульт публикации\n");
+    printf("  /publish -> VTL_PubicateMarkedText\n");
     printf("===========================================\n");
 
-    return (VTL_bot_Run(token, store_path) == VTL_res_kOk)
+    return (VTL_bot_Run(token, &handlers) == VTL_res_kOk)
                ? EXIT_SUCCESS : EXIT_FAILURE;
 }

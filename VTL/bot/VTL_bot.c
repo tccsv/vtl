@@ -1,9 +1,8 @@
 #include <VTL/bot/VTL_bot.h>
 #include <VTL/bot/VTL_bot_data.h>
 #include <VTL/bot/api/VTL_bot_api.h>
-#include <VTL/bot/store/VTL_bot_store.h>
+#include <VTL/bot/session/VTL_bot_session.h>
 #include <VTL/bot/command/VTL_bot_command.h>
-#include <VTL/bot/reminder/VTL_bot_reminder.h>
 
 #include <parson/parson.h>
 
@@ -29,10 +28,20 @@ static void VTL_bot_OnSignal(int sig)
     VTL_bot_g_stop = 1;
 }
 
+/* Sink ответов в проде: отправляет text в чат через Telegram Bot API.
+ * sink_ud — токен бота. Ошибки транспорта только логируются. */
+static void VTL_bot_TelegramReply(void* sink_ud, const char* chat_id,
+                                  const char* text)
+{
+    const char* token = (const char*)sink_ud;
+    if (VTL_bot_api_SendMessage(token, chat_id, text) != VTL_res_kOk)
+        fprintf(stderr, "[bot] sendMessage в чат %s не удался\n", chat_id);
+}
+
 /* Разбирает getUpdates и обрабатывает апдейты. Возвращает offset для
  * следующего запроса (max update_id + 1). */
-static long VTL_bot_ProcessUpdates(const char* body, VTL_bot_Store* store,
-                                   const char* token, long offset)
+static long VTL_bot_ProcessUpdates(const char* body, VTL_bot_Context* ctx,
+                                   long offset)
 {
     JSON_Value* root = json_parse_string(body);
     if (!root) return offset;
@@ -64,30 +73,32 @@ static long VTL_bot_ProcessUpdates(const char* body, VTL_bot_Store* store,
 
         printf("[bot] <- chat %s: %s\n", chat_id, text);
         fflush(stdout);
-        VTL_bot_command_Handle(store, token, chat_id, text);
+        VTL_bot_command_Handle(ctx, chat_id, text);
     }
 
     json_value_free(root);
     return offset;
 }
 
-VTL_AppResult VTL_bot_Run(const char* token, const char* store_path)
+VTL_AppResult VTL_bot_Run(const char* token, const VTL_bot_Handlers* handlers)
 {
     if (!token || !*token) return VTL_res_kInvalidParamErr;
-    if (!store_path) store_path = VTL_BOT_DEFAULT_STORE;
 
-    VTL_bot_Store* store = VTL_bot_store_Open(store_path);
-    if (!store) {
-        fprintf(stderr, "[bot] не удалось открыть хранилище %s\n", store_path);
-        return VTL_res_kFileOpenErr;
-    }
+    VTL_bot_SessionTable sessions;
+    VTL_bot_session_TableInit(&sessions);
+
+    VTL_bot_Context ctx;
+    ctx.sessions = &sessions;
+    ctx.handlers = handlers;
+    ctx.reply    = VTL_bot_TelegramReply;
+    ctx.reply_ud = (void*)token;
 
     signal(SIGINT, VTL_bot_OnSignal);
 #ifdef SIGTERM
     signal(SIGTERM, VTL_bot_OnSignal);
 #endif
 
-    printf("[bot] запущен, хранилище: %s. Ctrl+C для остановки.\n", store_path);
+    printf("[bot] запущен. Ctrl+C для остановки.\n");
     fflush(stdout); /* в составе VTL stdout блочно-буферизован — форсим вывод */
 
     char bot_name[64];
@@ -112,7 +123,7 @@ VTL_AppResult VTL_bot_Run(const char* token, const char* store_path)
                 fflush(stdout);
                 connected = 1;
             }
-            offset = VTL_bot_ProcessUpdates(body, store, token, offset);
+            offset = VTL_bot_ProcessUpdates(body, &ctx, offset);
             free(body);
         } else {
             if (connected) {
@@ -122,11 +133,8 @@ VTL_AppResult VTL_bot_Run(const char* token, const char* store_path)
             }
             VTL_BOT_SLEEP(3); /* не крутим тугой цикл при постоянной ошибке */
         }
-        /* Проверяем напоминания между опросами (гранулярность ~POLL_TIMEOUT_S). */
-        VTL_bot_reminder_Tick(store, token);
     }
 
     printf("\n[bot] остановлен.\n");
-    VTL_bot_store_Close(store);
     return VTL_res_kOk;
 }
