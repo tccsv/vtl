@@ -15,11 +15,14 @@ if "%PROJ%"=="" (echo ERROR: vcxproj name not given & exit /b 2)
 
 set "VSWHERE=C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" (echo ERROR: vswhere.exe not found & exit /b 3)
-for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -property installationPath`) do set "VS_PATH=%%i"
+for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
 if "%VS_PATH%"=="" (echo ERROR: Visual Studio not found & exit /b 3)
 
 call "%VS_PATH%\VC\Auxiliary\Build\vcvars64.bat" >nul
 if errorlevel 1 (echo ERROR: vcvars64 failed & exit /b 4)
+
+REM Каталог vswhere.exe в PATH (его дёргают VC-таргеты MSBuild)
+for %%I in ("%VSWHERE%") do set "PATH=%%~dpI;%PATH%"
 
 REM Локальный NASM в PATH (нужен для .asm сборки в FFmpeg)
 set "PATH=%ROOT%\external_sources\tools\nasm;%PATH%"

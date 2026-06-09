@@ -34,6 +34,8 @@ add_subdirectory(VTL/media_container)
 add_subdirectory(VTL/media_container/encoding)
 add_subdirectory(VTL/content_platform)
 add_subdirectory(VTL/history_administration)
+add_subdirectory(VTL/bot)
+add_subdirectory(VTL/vkbot)
 
 find_package(Threads REQUIRED)
 
@@ -67,6 +69,70 @@ add_subdirectory(VTL/publication/text/asciidoc
 add_executable(main_timofeenko main_timofeenko.c)
 target_link_libraries(main_timofeenko PRIVATE VTL_asciidoc)
 
+# Exe бота-пульта. Бот дёргает функции публикации проекта, поэтому линкуется
+# с тем же набором библиотек VTL, что и основной exe (http-клиент приходит из
+# VTL_utils). EXCLUDE_FROM_ALL — собирается явной целью:
+#   cmake --build build --target main_firyulin
+add_executable(main_firyulin EXCLUDE_FROM_ALL main_firyulin.c)
+target_link_libraries(main_firyulin PRIVATE
+    VTL_bot
+    VTL_scheduler
+    VTL_content_platform
+    VTL_publication
+    VTL_media_container
+    VTL_media_container_encoding
+    VTL_history_administration
+    VTL_user
+    VTL_utils
+    VTL_utils_auth
+    Threads::Threads
+)
+if(UNIX)
+    target_link_libraries(main_firyulin PRIVATE dl)
+endif()
+
+# Демо-бинарь для ручной проверки бота БЕЗ реальной публикации (и без FFmpeg):
+# заглушки вместо VTL_Pubicate*, локальный REPL или Telegram-режим. Линкуется
+# только с VTL_bot (parson + curl). EXCLUDE_FROM_ALL:
+#   cmake --build build --target main_firyulin_demo
+# HTTP-клиент докомпилируем напрямую (как в лёгкой версии), чтобы не тянуть весь
+# VTL_utils с его libpq/FFmpeg-зависимостями.
+add_executable(main_firyulin_demo EXCLUDE_FROM_ALL
+    tools/bot/main_firyulin_demo.c
+    VTL/utils/curl/VTL_utils_curl_http_client.c
+)
+target_link_libraries(main_firyulin_demo PRIVATE VTL_bot Threads::Threads)
+
+# Exe VK-бота сообщества. Как и main_firyulin, вызывает публикацию проекта,
+# поэтому линкуется с полным набором библиотек VTL. EXCLUDE_FROM_ALL:
+#   cmake --build build --target main_schulgin
+add_executable(main_schulgin EXCLUDE_FROM_ALL main_schulgin.c)
+target_link_libraries(main_schulgin PRIVATE
+    VTL_vkbot
+    VTL_scheduler
+    VTL_content_platform
+    VTL_publication
+    VTL_media_container
+    VTL_media_container_encoding
+    VTL_history_administration
+    VTL_user
+    VTL_utils
+    VTL_utils_auth
+    Threads::Threads
+)
+if(UNIX)
+    target_link_libraries(main_schulgin PRIVATE dl)
+endif()
+
+# Демо VK-бота без реальной публикации/FFmpeg (заглушки + локальный разбор или
+# реальный long-poll). HTTP-клиент докомпилируем напрямую.
+#   cmake --build build --target main_schulgin_demo
+add_executable(main_schulgin_demo EXCLUDE_FROM_ALL
+    tools/vkbot/main_schulgin_demo.c
+    VTL/utils/curl/VTL_utils_curl_http_client.c
+)
+target_link_libraries(main_schulgin_demo PRIVATE VTL_vkbot Threads::Threads)
+
 # Apple Silicon strict-проверка подписи — без ad-hoc codesign бинарь
 # падает с 'zsh: killed' при запуске.
 if(APPLE)
@@ -84,6 +150,12 @@ endif()
 
 enable_testing()
 add_subdirectory(VTL/test)
+
+# Юнит-тест бота (цель vtl_bot_test собирается в VTL/bot/CMakeLists).
+add_test(NAME VTL_bot_session_test COMMAND vtl_bot_test)
+
+# Юнит-тест VK-бота (цель vtl_vkbot_test в VTL/vkbot/CMakeLists).
+add_test(NAME VTL_vk_dialog_test COMMAND vtl_vkbot_test)
 
 add_test(
     NAME VTL_mediawiki_pipeline

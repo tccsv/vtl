@@ -17,20 +17,15 @@ Get-ChildItem -Path $SmpDir -Filter '*.vcxproj' | ForEach-Object {
     $path = $_.FullName
     $content = Get-Content -LiteralPath $path -Raw
 
-    $needle1 = '$(VCTargetsPath)\BuildCustomizations\nasm.props'
-    $needle2 = '$(VCTargetsPath)\BuildCustomizations\nasm.targets'
-    $replace1 = "$VsnasmDir\nasm.props"
-    $replace2 = "$VsnasmDir\nasm.targets"
-
-    $changed = $false
-    if ($content.Contains($needle1)) {
-        $content = $content.Replace($needle1, $replace1)
-        $changed = $true
-    }
-    if ($content.Contains($needle2)) {
-        $content = $content.Replace($needle2, $replace2)
-        $changed = $true
-    }
+    # Заменяем путь импорта nasm.props/nasm.targets на локальный VSNASM —
+    # независимо от того, что там стоит сейчас: токен $(VCTargetsPath)\... или
+    # абсолютный путь с чужой машины (SMP-проекты коммитятся с absolute paths).
+    $before = $content
+    $props_eval   = { 'Project="' + $VsnasmDir + '\nasm.props"' }
+    $targets_eval = { 'Project="' + $VsnasmDir + '\nasm.targets"' }
+    $content = [regex]::Replace($content, 'Project="[^"]*nasm\.props"',   $props_eval)
+    $content = [regex]::Replace($content, 'Project="[^"]*nasm\.targets"', $targets_eval)
+    $changed = ($content -ne $before)
 
     if ($changed) {
         Set-Content -LiteralPath $path -Value $content -NoNewline -Encoding UTF8
