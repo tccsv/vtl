@@ -26,5 +26,10 @@ text.wiki.*
 # Test inputs
 test_audios/
 
-# Секреты бота (токен/chat_id) — только локально, не в репозиторий
-tools/bot/secrets.env
+# Секреты ботов (токены/id) — только локально, не в репозиторий
+tools/bots/tgbot/secrets.env
+tools/bots/vkbot/secrets.env
+
+# Логи запуска ботов
+tools/bots/tgbot/*.log
+tools/bots/vkbot/*.log
