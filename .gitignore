@@ -2,6 +2,7 @@
 build/
 build-*/
 app/
+msvc/
 *.o
 
 # IDE / tooling
@@ -16,9 +17,19 @@ __pycache__/
 # Temp files
 *.log
 
-# Test outputs
+# Test outputs (генерируемые публикацией; сами text.adoc/text.wiki — входные, не игнорятся)
 text.md
 text.md.*
+text.adoc.*
+text.wiki.*
 
 # Test inputs
 test_audios/
+
+# Секреты ботов (токены/id) — только локально, не в репозиторий
+tools/bots/tgbot/secrets.env
+tools/bots/vkbot/secrets.env
+
+# Логи запуска ботов
+tools/bots/tgbot/*.log
+tools/bots/vkbot/*.log
